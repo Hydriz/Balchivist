@@ -588,9 +588,9 @@ class BALMWikidata(object):
                 return False
 
         if (path is None):
-            pass
-        else:
             shutil.rmtree(dumps)
+        else:
+            pass
 
         return True
 
