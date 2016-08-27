@@ -499,8 +499,14 @@ class BALMWikidata(object):
 
         Returns: True if update is successful, False if an error occurred.
         """
-        arcdate = self.conv.getDateFromWiki(params['dumpdate'],
-                                            archivedate=True)
+        try:
+            arcdate = self.conv.getDateFromWiki(params['dumpdate'],
+                                                archivedate=True)
+        except ValueError:
+            # This case occurs when the "dumpdate" parameter is not in the
+            # %Y%m%d format (usually for files like "dcatap.rdf")
+            return False
+
         values = {
             'wiki': '"%s"' % (params['wiki']),
             'dumpdate': '"%s"' % (arcdate),
