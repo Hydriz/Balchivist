@@ -35,8 +35,6 @@ class BALRunner(object):
                                          default=config.get('defaults_file'))
         self.modules = json.loads(config.get('modules'))
         self.message = balchivist.BALMessage()
-        # The database table hosting the information on dumps
-        self.dbtable = "archive"
 
     def execute(self):
         """
