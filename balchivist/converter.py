@@ -18,8 +18,8 @@ import datetime
 import json
 import os
 import time
+import urllib
 
-import wikitools
 from exception import IncorrectUsage
 import message
 
@@ -37,12 +37,8 @@ class BALConverter(object):
         - "150703": "July 03, 2015"
         - "20150703": "2015-07-03" (for the archivedate metadata)
         """
-        self.languagesQuery = {
-            "action": "sitematrix",
-            "smtype": "language",
-            "smlangprop": "localname|code"
-        }
-        self.enwikiApi = "https://en.wikipedia.org/w/api.php"
+        self.apiUrl = "https://en.wikipedia.org/w/api.php?action=sitematrix"
+        self.apiUrl += "&smtype=language&smlangprop=localname|code&format=json"
         self.langFile = os.path.dirname(os.path.realpath(__file__)) + '/'
         self.langFile += "languages.json"
         self.dbsuffixes = [
@@ -113,27 +109,6 @@ class BALConverter(object):
             "ve": "Wikimedia Venezuela"
         }
 
-    def queryApi(self, apiurl, query):
-        """
-        This function queries the API by running query on apiurl and outputs
-        the result in JSON format.
-
-        - apiurl (string): The URL to the API's base.
-        - query (dict): A dictionary of API parameters.
-
-        Returns: Dict with the API results.
-
-        TODO: The API query should be reimplemented here so that we do not have
-        the wikitools library requirement.
-        """
-        Wiki = wikitools.Wiki(apiurl)
-        if type(query) != dict:
-            raise TypeError('Query parameter should be type dict'
-                            ', got %s instead' % (type(query)))
-        else:
-            API = wikitools.APIRequest(Wiki, query)
-            return API.query(querycontinue=False)
-
     def getLanguageList(self):
         """
         This function gets the language list from the English Wikipedia and
@@ -141,15 +116,12 @@ class BALConverter(object):
 
         Returns: Boolean to indicate status of the language list retrieval.
         """
-        languages = self.queryApi(self.enwikiApi, self.languagesQuery)
-        if languages == dict():
-            # We have gotten an empty result from the server
-            # It is likely that wikitools would have handled this correctly
+        fileopener = urllib.URLopener()
+        try:
+            fileopener.retrieve(self.apiUrl, self.langFile)
+            return True
+        except:
             return False
-        else:
-            with open(self.langFile, 'w') as langfile:
-                json.dump(languages, langfile)
-            return
 
     def getLanguages(self):
         """

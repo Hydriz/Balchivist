@@ -1,2 +1,1 @@
 internetarchive <= 0.9.8
-wikitools >= 1.3
