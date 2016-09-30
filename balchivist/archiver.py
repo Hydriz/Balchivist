@@ -154,6 +154,7 @@ class BALArchiver(object):
                 else:
                     time.sleep(60*tries)
 
+
 if __name__ == '__main__':
     BALMessage = message.BALMessage()
     raise IncorrectUsage(BALMessage.getMessage('exception-incorrectusage'))

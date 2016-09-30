@@ -880,6 +880,7 @@ class BALMDumps(object):
 
         return True
 
+
 if __name__ == "__main__":
     BALMessage = balchivist.BALMessage()
     IncorrectUsage = balchivist.exception.IncorrectUsage

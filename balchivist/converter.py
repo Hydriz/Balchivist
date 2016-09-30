@@ -298,6 +298,7 @@ class BALConverter(object):
         else:
             return output
 
+
 if __name__ == "__main__":
     BALMessage = message.BALMessage()
     raise IncorrectUsage(BALMessage.getMessage('exception-incorrectusage'))

@@ -51,6 +51,7 @@ class BALConfig(object):
         config.read(self.configfile)
         return config.get(self.section, variable)
 
+
 if __name__ == '__main__':
     BALMessage = message.BALMessage()
     raise IncorrectUsage(BALMessage.getMessage('exception-incorrectusage'))
