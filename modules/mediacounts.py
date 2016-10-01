@@ -540,44 +540,45 @@ class BALMMediacounts(object):
         occurred.
         """
         # Variables for getting latest 3 days for updating/checking
-        today = datetime.datetime.now().strftime("%Y%m%d")
         oneday = datetime.datetime.now() - datetime.timedelta(days=1)
         twoday = datetime.datetime.now() - datetime.timedelta(days=2)
+        theday = datetime.datetime.now() - datetime.timedelta(days=3)
         yesterday = oneday.strftime("%Y%m%d")
         daybefore = twoday.strftime("%Y%m%d")
+        threedays = theday.strftime("%Y%m%d")
 
         alldumps = self.getDumpDates()
 
-        # Add today's date into the database
-        if (today in alldumps):
-            self.common.giveMessage("Dump on %s already in the database, "
-                                    "skipping" % (today))
-        else:
-            self.addNewItem(dumpdate=today)
-
-        # Allow yesterday's dump to be archived
+        # Add yesterday's date into the database
         if (yesterday in alldumps):
-            self.common.giveMessage("Updating can_archive for dump on %s" %
-                                    (yesterday))
-            self.updateCanArchive(dumpdate=yesterday, can_archive=1)
+            self.common.giveMessage("Dump on %s already in the database, "
+                                    "skipping" % (yesterday))
         else:
-            # Yesterday's date was not in the database, which should not happen
-            self.common.giveMessage("Adding dump on %s and updating its "
-                                    "can_archive status" % (yesterday))
             self.addNewItem(dumpdate=yesterday)
-            self.updateCanArchive(dumpdate=yesterday, can_archive=1)
 
-        # Double-check dump for the day before
+        # Allow dump for the day before to be archived
         if (daybefore in alldumps):
-            # Ensure that it really can be archived
+            self.common.giveMessage("Updating can_archive for dump on %s" %
+                                    (daybefore))
             self.updateCanArchive(dumpdate=daybefore, can_archive=1)
         else:
-            # The day before yesterday's date was not in the database, which
-            # really should not happen
+            # The day before was not in the database, which should not happen
             self.common.giveMessage("Adding dump on %s and updating its "
                                     "can_archive status" % (daybefore))
             self.addNewItem(dumpdate=daybefore)
             self.updateCanArchive(dumpdate=daybefore, can_archive=1)
+
+        # Double-check dump for 3 days ago
+        if (threedays in alldumps):
+            # Ensure that it really can be archived
+            self.updateCanArchive(dumpdate=threedays, can_archive=1)
+        else:
+            # 3 days ago dump was not in the database, which really should not
+            # happen
+            self.common.giveMessage("Adding dump on %s and updating its "
+                                    "can_archive status" % (threedays))
+            self.addNewItem(dumpdate=threedays)
+            self.updateCanArchive(dumpdate=threedays, can_archive=1)
 
         return True
 
