@@ -85,8 +85,7 @@ class BALRunner(object):
 
         for module in self.modules:
             classname = "BALM" + module.title()
-            ClassModule = getattr(modules, classname)(argparse=True)
-            ClassModule.argparse(parser=parser)
+            getattr(modules, classname).argparse(parser=parser)
 
         # Let's parse the arguments given by the user now
         args = parser.parse_args()

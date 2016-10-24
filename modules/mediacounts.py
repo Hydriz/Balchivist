@@ -24,53 +24,54 @@ import balchivist
 
 
 class BALMMediacounts(object):
-    def __init__(self, params={}, argparse=False, sqldb=None):
+    """
+    This module is for archiving the statistics on visits to media files
+    provided by the Wikimedia Foundation (available at
+    <https://dumps.wikimedia.org/other/mediacounts/>) to the Internet
+    Archive.
+    """
+    title = "Wikimedia statistics files for media files visits on %s"
+    desc = "This is the Wikimedia statistics files for visits to "
+    desc += "media files on upload.wikimedia.org on %s."
+
+    config = balchivist.BALConfig("mediacounts")
+    dbtable = "mediacounts"
+    conv = balchivist.BALConverter()
+    hostname = socket.gethostname()
+    tempdir = config.get('dumpdir')
+    filelist = [
+        "mediacounts.%s.v00.tsv.bz2",
+        "mediacounts.top1000.%s.v00.csv.zip"
+    ]
+
+    jobs = [
+        "archive",
+        "check",
+        "update"
+    ]
+    # A size hint for the Internet Archive, currently set at 100GB
+    sizehint = "107374182400"
+
+    def __init__(self, params={}, sqldb=None):
         """
         This module is for archiving the statistics on visits to media files
         provided by the Wikimedia Foundation (available at
         <https://dumps.wikimedia.org/other/mediacounts/>) to the Internet
         Archive.
 
-        - argparse (boolean): Whether or not the class was called during the
-        argparse stage.
         - params (dict): Information about what is to be done about a given
         item. The "verbose" and "debug" parameters are necessary.
         - sqldb (object): A call to the BALSqlDb class with the required
         parameters.
         """
-        self.title = "Wikimedia statistics files for media files visits on %s"
-        self.desc = "This is the Wikimedia statistics files for visits to "
-        self.desc += "media files on upload.wikimedia.org on %s."
-
-        self.config = balchivist.BALConfig("mediacounts")
         self.sqldb = sqldb
-        self.dbtable = "mediacounts"
-        self.conv = balchivist.BALConverter()
-        self.hostname = socket.gethostname()
-        self.tempdir = self.config.get('dumpdir')
-        self.filelist = [
-            "mediacounts.%s.v00.tsv.bz2",
-            "mediacounts.top1000.%s.v00.csv.zip"
-        ]
-
-        if (argparse):
-            self.verbose = False
-            self.debug = False
-        else:
-            self.verbose = params['verbose']
-            self.debug = params['debug']
-
-        self.jobs = [
-            "archive",
-            "check",
-            "update"
-        ]
-        # A size hint for the Internet Archive, currently set at 100GB
-        self.sizehint = "107374182400"
+        self.verbose = params['verbose']
+        self.debug = params['debug']
         self.common = balchivist.BALCommon(verbose=self.verbose,
                                            debug=self.debug)
 
-    def argparse(self, parser=None):
+    @classmethod
+    def argparse(cls, parser=None):
         """
         This function is used for declaring the valid arguments specific to
         this module and should only be used during the argparse stage.
@@ -82,7 +83,7 @@ class BALMMediacounts(object):
             description="Statistics on visits to media files."
         )
         group.add_argument("--mediacounts-job", action="store",
-                           choices=self.jobs, default="archive",
+                           choices=cls.jobs, default="archive",
                            dest="mediacountsjob", help="The job to execute.")
         group.add_argument("--mediacounts-date", action="store",
                            dest="mediacountsdate",
