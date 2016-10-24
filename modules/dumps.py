@@ -53,6 +53,10 @@ class BALMDumps(object):
         'dumpruninfo.txt',
         'status.html'
     ]
+    checksums = [
+        'md5sums.txt',
+        'sha1sums.txt'
+    ]
 
     def __init__(self, params={}, sqldb=None):
         """
@@ -721,6 +725,45 @@ class BALMDumps(object):
                 }
                 self.updateCanArchive(params=params)
 
+    def getFilesToUpload(self, wiki, dumpdate, path=None):
+        """
+        This function is used to generate the list of files to upload given
+        the circumstances.
+
+        - wiki (string): The wiki database to work on.
+        - dumpdate (string): The date of the dump in %Y%m%d format.
+        - path (string): The path to the dump directory.
+
+        Returns: List of files to upload.
+        """
+        iaitem = balchivist.BALArchiver('%s-%s' % (wiki, dumpdate),
+                                        verbose=self.verbose, debug=self.debug)
+        allfiles = self.getDumpFiles(wiki, dumpdate)
+        # Check which files are missing in order to resume upload
+        if self.resume:
+            items = []
+            iafiles = iaitem.getFileList()
+            for dumpfile in allfiles:
+                if dumpfile in iafiles:
+                    continue
+                else:
+                    # The file does not exist in the Internet Archive item
+                    items.append(dumpfile)
+            if items == []:
+                self.common.giveMessage("All files have already been uploaded")
+                return items
+        else:
+            items = allfiles
+
+        # Check if checksums are available and add them if they do
+        for checksum in self.checksums:
+            filename = "%s-%s-%s" % (wiki, dumpdate, checksum)
+            filepath = "%s/%s" % (path, filename)
+            if os.path.exists(filepath):
+                items.append(filename)
+            else:
+                continue
+
     def archive(self, wiki, date, path=None):
         """
         This function is for doing the actual archiving process.
@@ -731,10 +774,6 @@ class BALMDumps(object):
 
         Returns: True if process is successful, False if otherwise.
         """
-        checksums = [
-            'md5sums.txt',
-            'sha1sums.txt'
-        ]
         metadata = self.getItemMetadata(wiki=wiki, dumpdate=date)
         headers = {
             'x-archive-size-hint': self.sizehint
@@ -751,35 +790,14 @@ class BALMDumps(object):
             return False
         iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
                                         verbose=self.verbose, debug=self.debug)
-        allfiles = self.getDumpFiles(wiki, date)
 
-        # If --resume is given, check which files are missing
-        if self.resume:
-            items = []
-            iafiles = iaitem.getFileList()
-            for dumpfile in allfiles:
-                if dumpfile in iafiles:
-                    continue
-                else:
-                    # The file does not exist in the Internet Archive item
-                    items.append(dumpfile)
-            if items == []:
-                self.common.giveMessage("All files have already been uploaded")
-                return True
+        items = self.getFilesToUpload(wiki=wiki, dumpdate=date, path=path)
+        if (items == []):
+            return True
         else:
-            items = allfiles
-
-        # Check if checksums are available and add them if they do
-        for checksum in checksums:
-            filename = "%s-%s-%s" % (wiki, date, checksum)
-            filepath = "%s/%s" % (dumps, filename)
-            if os.path.exists(filepath):
-                items.append(filename)
-            else:
-                continue
-
-        os.chdir(dumps)
-        return iaitem.upload(body=items, metadata=metadata, headers=headers)
+            os.chdir(dumps)
+            return iaitem.upload(body=items, metadata=metadata,
+                                 headers=headers)
 
     def check(self, wiki, date):
         """
