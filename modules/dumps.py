@@ -96,6 +96,40 @@ class BALMDumps(object):
                            help="Resume uploading a wiki dump instead of "
                            "restarting all over.")
 
+    def getItemMetadata(self, wiki, dumpdate):
+        """
+        This function is used for obtaining the metadata for the item on the
+        Internet Archive.
+
+        - dumpdate (string in %Y%m%d format): The date of the dump to work on.
+
+        Returns: Dict with the necessary item metadata.
+        """
+        try:
+            datetime.datetime.strptime(dumpdate, '%Y%m%d')
+        except ValueError:
+            self.common.giveMessage('The date was given in the wrong format!')
+            return False
+        sitename = self.conv.getNameFromDB(wiki, pretext=True)
+        langname = self.conv.getNameFromDB(wiki, format='language')
+        project = self.conv.getNameFromDB(wiki, format='project')
+        datename = self.conv.getDateFromWiki(dumpdate)
+        arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
+
+        metadata = {
+            "collection": self.config.get('collection'),
+            "creator": self.config.get('creator'),
+            "contributor": self.config.get('contributor'),
+            "mediatype": self.config.get('mediatype'),
+            "rights": self.config.get('rights'),
+            "subject": self.subject % (wiki, langname, project),
+            "date": arcdate,
+            "licenseurl": self.config.get('licenseurl'),
+            "title": self.title % (sitename, datename),
+            "description": self.desc % (sitename, datename)
+        }
+        return metadata
+
     def getDumpProgress(self, wiki, date):
         """
         This function is used to get the progress of a dump.
@@ -577,15 +611,14 @@ class BALMDumps(object):
 
         Returns: True if process is successful, False if otherwise.
         """
-        sitename = self.conv.getNameFromDB(wiki, pretext=True)
-        langname = self.conv.getNameFromDB(wiki, format='language')
-        project = self.conv.getNameFromDB(wiki, format='project')
-        datename = self.conv.getDateFromWiki(date)
-        arcdate = self.conv.getDateFromWiki(date, archivedate=True)
         checksums = [
             'md5sums.txt',
             'sha1sums.txt'
         ]
+        metadata = self.getItemMetadata(wiki=wiki, dumpdate=date)
+        headers = {
+            'x-archive-size-hint': self.sizehint
+        }
 
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
@@ -596,7 +629,6 @@ class BALMDumps(object):
         else:
             # The dump directory is not suitable to be used, exit the function
             return False
-        count = 0
         iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
                                         verbose=self.verbose, debug=self.debug)
         allfiles = self.getDumpFiles(wiki, date)
@@ -627,44 +659,7 @@ class BALMDumps(object):
                 continue
 
         os.chdir(dumps)
-        for dumpfile in items:
-            self.common.giveMessage("Uploading file: %s" % (dumpfile))
-            time.sleep(1)  # For Ctrl+C
-            if count == 0:
-                metadata = {
-                    "collection": self.config.get('collection'),
-                    "creator": self.config.get('creator'),
-                    "contributor": self.config.get('contributor'),
-                    "mediatype": self.config.get('mediatype'),
-                    "rights": self.config.get('rights'),
-                    "subject": self.subject % (wiki, langname, project),
-                    "date": arcdate,
-                    "licenseurl": self.config.get('licenseurl'),
-                    "title": self.title % (sitename, datename),
-                    "description": self.desc % (sitename, datename)
-                }
-                headers = {
-                    'x-archive-size-hint': self.sizehint
-                }
-                upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers)
-                # Allow the Internet Archive to process the item creation
-                if self.debug:
-                    pass
-                else:
-                    timenow = time.strftime("%Y-%m-%d %H:%M:%S",
-                                            time.localtime())
-                    self.common.giveMessage("Sleeping for 30 seconds, %s" %
-                                            (timenow))
-                    time.sleep(30)
-            else:
-                upload = iaitem.uploadFile(dumpfile)
-            if upload:
-                self.common.giveDebugMessage(upload)
-                count += 1
-            else:
-                return False
-        return True
+        return iaitem.upload(body=items, metadata=metadata, headers=headers)
 
     def check(self, wiki, date):
         """

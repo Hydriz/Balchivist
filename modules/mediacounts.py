@@ -101,13 +101,13 @@ class BALMMediacounts(object):
 
         Returns: Dict with the necessary item metadata.
         """
-        datename = self.conv.getDateFromWiki(dumpdate)
-        arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
         try:
             datetime.datetime.strptime(dumpdate, '%Y%m%d')
         except ValueError:
             self.common.giveMessage('The date was given in the wrong format!')
             return False
+        datename = self.conv.getDateFromWiki(dumpdate)
+        arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
 
         metadata = {
             'collection': self.config.get('collection'),
@@ -455,10 +455,13 @@ class BALMMediacounts(object):
 
         Returns: True if process is successful, False if otherwise.
         """
-        count = 0
         identifier = "mediacounts-%s" % (dumpdate)
         iaitem = balchivist.BALArchiver(identifier)
         allfiles = self.getFiles(dumpdate)
+        md = self.getItemMetadata(dumpdate)
+        headers = {
+            'x-archive-size-hint': self.sizehint
+        }
 
         if (path is None):
             dumps = self.tempdir
@@ -473,39 +476,12 @@ class BALMMediacounts(object):
             return False
 
         os.chdir(dumps)
-        for dumpfile in allfiles:
-            self.common.giveMessage("Uploading file: %s" % (dumpfile))
-            time.sleep(1)  # For Ctrl+C
-            if count == 0:
-                metadata = self.getItemMetadata(dumpdate)
-                headers = {
-                    'x-archive-size-hint': self.sizehint
-                }
-                upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers)
-                # Allow the Internet Archive to process the item creation
-                if self.debug:
-                    pass
-                else:
-                    timenow = time.strftime("%Y-%m-%d %H:%M:%S",
-                                            time.localtime())
-                    self.common.giveMessage("Sleeping for 30 seconds, %s" %
-                                            (timenow))
-                    time.sleep(30)
-            else:
-                upload = iaitem.uploadFile(dumpfile)
+        upload = iaitem.upload(body=allfiles, metadata=md, headers=headers)
 
-            if upload:
-                count += 1
-            else:
-                return False
-
-        if (path is None):
+        if (upload and path is None):
             self.removeFiles(allfiles)
         else:
-            pass
-
-        return True
+            return upload
 
     def check(self, dumpdate):
         """
