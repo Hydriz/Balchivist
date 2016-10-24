@@ -19,12 +19,13 @@ import time
 import internetarchive
 
 from . import BALVERSION
+import common
 from exception import IncorrectUsage
 import message
 
 
 class BALArchiver(object):
-    def __init__(self, identifier='', retries=3):
+    def __init__(self, identifier='', retries=3, debug=False, verbose=False):
         """
         This module is used for providing regular functions used for
         uploading files into the Internet Archive. It is an extension of
@@ -32,9 +33,13 @@ class BALArchiver(object):
 
         - identifier (string): The identifier for the item.
         - retries (int): The number of times to retry a request to the server.
+        - debug (boolean): Whether or not to provide debugging output.
+        - verbose (boolean): Whether or not to provide more verbosity in output.
         """
         self.retries = retries
         self.identifier = identifier
+        self.debug = debug
+        self.verbose = verbose
         # Files that are present by default in all Internet Archive items
         self.defaultFiles = [
             '%s_archive.torrent' % (identifier),
@@ -43,15 +48,36 @@ class BALArchiver(object):
             '%s_meta.xml' % (identifier)
         ]
 
+    def handleException(self, exception):
+        """
+        This function is for handling exceptions caught when making a request
+        to the Internet Archive.
+
+        - exception (object): The exception object caught.
+        """
+        commonobject = common.BALCommon()
+        msg = "%s was caught" % (type(exception).__name__)
+        commonobject.giveDebugMessage(msg)
+
     def getFileList(self):
         """
         This function is used to get the list of files in an item and excludes
         the default files that are present in all Internet Archive items.
 
         Returns: List of files in the item excluding default files in
-        alphabetical order.
+        alphabetical order. False if an error has occurred.
         """
-        files = internetarchive.get_files(identifier=self.identifier)
+        tries = 0
+        while tries < self.retries:
+            try:
+                files = internetarchive.get_files(identifier=self.identifier)
+            except Exception as exception:
+                self.handleException(exception=exception)
+                if tries == self.retries:
+                    return False
+                else:
+                    time.sleep(60*tries)
+
         filelist = []
         for thefile in files:
             filename = thefile.name
@@ -62,7 +88,7 @@ class BALArchiver(object):
         return sorted(filelist)
 
     def uploadFile(self, body, key=None, metadata={}, headers={},
-                   queuederive=False, verbose=False, verify=True, debug=False):
+                   queuederive=False, verify=True):
         """
         This function will upload a single file to the item on the Internet
         Archive.
@@ -73,9 +99,6 @@ class BALArchiver(object):
         - queuederive (boolean): Whether or not to derive the item after the
         file is uploaded.
         - verify (boolean): Whether or not to verify that the file is uploaded.
-        - debug (boolean): Whether or not to run this upload in debug mode.
-        The actual file will not be uploaded, but the requests sent will be
-        returned.
 
         Returns: True if the file is successfully uploaded, False if errors
         are encountered.
@@ -85,29 +108,25 @@ class BALArchiver(object):
         if not metadata.get('scanner'):
             scanner = 'Balchivist Python Library %s' % (BALVERSION)
             metadata['scanner'] = scanner
-
-        iaupload = internetarchive.upload
         tries = 0
+        iaupload = internetarchive.upload
 
         while tries < self.retries:
             try:
                 iaupload(identifier=self.identifier, files=body,
                          metadata=metadata, headers=headers,
-                         queue_derive=queuederive, verbose=verbose,
-                         verify=verify, debug=debug, retries=self.retries)
+                         queue_derive=queuederive, verbose=self.verbose,
+                         verify=verify, debug=self.debug, retries=self.retries)
                 return True
             except Exception as exception:
-                tries += 1
-                if debug:
-                    print "%s was caught" % (type(exception).__name__)
-                    return False
-                elif tries == self.retries:
+                self.handleException(exception=exception)
+                if tries == self.retries:
                     return False
                 else:
                     time.sleep(60*tries)
 
     def modifyMetadata(self, metadata, target='metadata', append=False,
-                       priority=None, debug=False):
+                       priority=None):
         """
         This function will modify the metadata of an item on the Internet
         Archive.
@@ -117,7 +136,6 @@ class BALArchiver(object):
         - append (boolean): Whether or not to append the metadata values to the
         current values instead of replacing them.
         - priority (int): The priority for the metadata update task.
-        - debug (boolean): Whether or not to run this function in debug mode.
 
         Returns: True if the modification is successful, False if otherwise.
         """
@@ -131,14 +149,11 @@ class BALArchiver(object):
             try:
                 iamodifymd(identifier=self.identifier, metadata=metadata,
                            target=target, append=append, priority=priority,
-                           debug=debug)
+                           debug=self.debug)
                 return True
             except Exception as exception:
-                tries += 1
-                if debug:
-                    print "%s was caught" % (type(exception).__name__)
-                    return False
-                elif tries == self.retries:
+                self.handleException(exception=exception)
+                if tries == self.retries:
                     return False
                 else:
                     time.sleep(60*tries)

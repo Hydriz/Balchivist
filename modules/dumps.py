@@ -567,15 +567,13 @@ class BALMDumps(object):
                 dumps.append(result[0].strftime("%Y%m%d"))
         return dumps
 
-    def archive(self, wiki, date, path=None, verbose=False, debug=False):
+    def archive(self, wiki, date, path=None):
         """
         This function is for doing the actual archiving process.
 
         - wiki (string): The wiki database to archive.
         - date (string): The date of the dump in %Y%m%d format.
         - path (string): The path to the dump directory.
-        - verbose (boolean): Whether or not to increase verbosity.
-        - debug (boolean): Whether or not to run in debug mode.
 
         Returns: True if process is successful, False if otherwise.
         """
@@ -599,7 +597,8 @@ class BALMDumps(object):
             # The dump directory is not suitable to be used, exit the function
             return False
         count = 0
-        iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date))
+        iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
+                                        verbose=self.verbose, debug=self.debug)
         allfiles = self.getDumpFiles(wiki, date)
 
         # If --resume is given, check which files are missing
@@ -648,9 +647,9 @@ class BALMDumps(object):
                     'x-archive-size-hint': self.sizehint
                 }
                 upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers, debug=self.debug)
+                                           headers=headers)
                 # Allow the Internet Archive to process the item creation
-                if debug:
+                if self.debug:
                     pass
                 else:
                     timenow = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -659,7 +658,7 @@ class BALMDumps(object):
                                             (timenow))
                     time.sleep(30)
             else:
-                upload = iaitem.uploadFile(dumpfile, debug=debug)
+                upload = iaitem.uploadFile(dumpfile)
             if upload:
                 self.common.giveDebugMessage(upload)
                 count += 1
@@ -678,7 +677,8 @@ class BALMDumps(object):
         """
         complete = True
         allfiles = self.getDumpFiles(wiki, date)
-        iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date))
+        iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
+                                        debug=self.debug, verbose=self.verbose)
         iafiles = iaitem.getFileList()
         self.common.giveMessage("Checking if all files are uploaded for %s "
                                 "on %s" % (wiki, date))
@@ -805,8 +805,7 @@ class BALMDumps(object):
         msg += "dump of %s on %s" % (wiki, date)
         self.common.giveMessage(msg)
         if (job == "archive"):
-            status = self.archive(wiki=wiki, date=date, path=path,
-                                  verbose=self.verbose, debug=self.debug)
+            status = self.archive(wiki=wiki, date=date, path=path)
             if (self.debug):
                 return status
             elif (self.debug is False and status):

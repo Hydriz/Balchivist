@@ -518,16 +518,13 @@ class BALMWikidata(object):
         }
         return self.sqldb.insert(dbtable=self.dbtable, values=values)
 
-    def archive(self, database, dumpdate, path=None, verbose=False,
-                debug=False):
+    def archive(self, database, dumpdate, path=None):
         """
         This function is for doing the actual archiving process.
 
         - database (string): The wiki database to archive.
         - dumpdate (string): The dumpdate of the dump in %Y%m%d format.
         - path (string): The path to the dump directory.
-        - verbose (boolean): Whether or not to increase verbosity.
-        - debug (boolean): Whether or not to run in debug mode.
 
         Returns: True if process is successful, False if otherwise.
         """
@@ -575,9 +572,9 @@ class BALMWikidata(object):
                     'x-archive-size-hint': self.sizehint
                 }
                 upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers, debug=debug)
+                                           headers=headers)
                 # Allow the Internet Archive to process the item creation
-                if debug:
+                if self.debug:
                     pass
                 else:
                     timenow = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -586,7 +583,7 @@ class BALMWikidata(object):
                                             (timenow))
                     time.sleep(30)
             else:
-                upload = iaitem.uploadFile(dumpfile, debug=debug)
+                upload = iaitem.uploadFile(dumpfile)
 
             if upload:
                 count += 1
@@ -703,8 +700,7 @@ class BALMWikidata(object):
         msg += "for %s on %s" % (wiki, date)
         self.common.giveMessage(msg)
         if (job == "archive"):
-            status = self.archive(database=wiki, dumpdate=date, path=path,
-                                  verbose=self.verbose, debug=self.debug)
+            status = self.archive(database=wiki, dumpdate=date, path=path)
             if (self.debug):
                 return status
             elif (self.debug is False and status):

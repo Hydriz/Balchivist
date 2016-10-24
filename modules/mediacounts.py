@@ -446,14 +446,12 @@ class BALMMediacounts(object):
             return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                      conds="dumpdate=\"%s\"" % (arcdate))
 
-    def archive(self, dumpdate, path=None, verbose=False, debug=False):
+    def archive(self, dumpdate, path=None):
         """
         This function is for doing the actual archiving process.
 
         - dumpdate (string): The dumpdate of the dump in %Y%m%d format.
         - path (string): The path to the dump directory.
-        - verbose (boolean): Whether or not to increase verbosity.
-        - debug (boolean): Whether or not to run in debug mode.
 
         Returns: True if process is successful, False if otherwise.
         """
@@ -484,9 +482,9 @@ class BALMMediacounts(object):
                     'x-archive-size-hint': self.sizehint
                 }
                 upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers, debug=debug)
+                                           headers=headers)
                 # Allow the Internet Archive to process the item creation
-                if debug:
+                if self.debug:
                     pass
                 else:
                     timenow = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -495,7 +493,7 @@ class BALMMediacounts(object):
                                             (timenow))
                     time.sleep(30)
             else:
-                upload = iaitem.uploadFile(dumpfile, debug=debug)
+                upload = iaitem.uploadFile(dumpfile)
 
             if upload:
                 count += 1
@@ -592,8 +590,7 @@ class BALMMediacounts(object):
         msg += "statistics on %s" % (date)
         self.common.giveMessage(msg)
         if (job == "archive"):
-            status = self.archive(dumpdate=date, path=path,
-                                  verbose=self.verbose, debug=self.debug)
+            status = self.archive(dumpdate=date, path=path)
             if (self.debug):
                 return status
             elif (self.debug is False and status):
