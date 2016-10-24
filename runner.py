@@ -30,9 +30,7 @@ class BALRunner(object):
         is designed to run indefinitely.
         """
         config = balchivist.BALConfig('main')
-        self.sqldb = balchivist.BALSqlDb(database=config.get('database'),
-                                         host=config.get('host'),
-                                         default=config.get('defaults_file'))
+        self.sqldb = balchivist.BALSqlDb.getFromConf()
         self.modules = json.loads(config.get('modules'))
         self.message = balchivist.BALMessage()
 

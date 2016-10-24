@@ -16,6 +16,7 @@
 
 import MySQLdb
 
+from config import BALConfig
 from exception import IncorrectUsage
 import message
 
@@ -34,6 +35,17 @@ class BALSqlDb(object):
         self.database = database
         self.host = host
         self.default = default
+
+    @classmethod
+    def getFromConf(cls):
+        """
+        This function is used to initialize a BALSqlDb instance based on the
+        configuration stored in settings.conf.
+        """
+        config = BALConfig('main')
+        return cls(database=config.get('database'),
+                   host=config.get('host'),
+                   default=config.get('defaults_file'))
 
     def execute(self, query, params=()):
         """
