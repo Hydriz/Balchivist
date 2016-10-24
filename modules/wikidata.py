@@ -517,6 +517,107 @@ class BALMWikidata(object):
         }
         return self.sqldb.insert(dbtable=self.dbtable, values=values)
 
+    def updateNewDumps(self, db, alldumps):
+        """
+        This function is used to check if all new dumps have been registered
+        and update the database accordingly for new dumps. This function is
+        called during the "update" job.
+
+        - db (string): The database to work on.
+        - alldumps (list): A list of all dumps.
+        """
+        storeddumps = self.getStoredDumps(database=db)
+        for dump in alldumps:
+            if (dump in storeddumps):
+                self.common.giveMessage("Dump of %s on %s already in the "
+                                        "database, skipping" % (db, dump))
+                continue
+            else:
+                self.common.giveMessage("Adding new item %s on "
+                                        "%s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'dumpdate': dump
+                }
+                self.addNewItem(params=params)
+
+    def updateCanArchiveStatus(self, db, alldumps):
+        """
+        This function is used for checking existing dumps that have been
+        completed and updates the database if these dumps are ready to be
+        archived. This function is called during the "update" job.
+
+        - db (string): The database to work on.
+        - alldumps (list): A list of all dumps.
+        """
+        cannotarc = self.getStoredDumps(database=db, can_archive=0)
+        lastweek = datetime.datetime.now()
+        lastweek -= datetime.timedelta(days=7)
+        for dump in cannotarc:
+            if (dump <= lastweek.strftime("%Y%m%d") and dump in alldumps):
+                # The dump is now suitable to be archived
+                self.common.giveMessage("Updating can_archive for %s "
+                                        "on %s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'dumpdate': dump,
+                    'can_archive': 1
+                }
+                self.updateCanArchive(params=params)
+            else:
+                continue
+
+    def updateOldCanArchiveStatus(self, db, alldumps):
+        """
+        This function is used for checking whether the dumps marked as "can
+        archive" is really able to be archived or has been deleted. This
+        function is called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        canarc = self.getStoredDumps(database=db, can_archive=1)
+        for dump in canarc:
+            if (dump in alldumps):
+                continue
+            else:
+                # The dump is now unable to be archived
+                self.common.giveMessage("Updating can_archive for %s on "
+                                        "%s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'dumpdate': dump,
+                    'can_archive': 0
+                }
+                self.updateCanArchive(params=params)
+
+    def getFilesToUpload(self, database, dumpdate):
+        """
+        This function is used to generate the list of files to upload given
+        the circumstances.
+
+        - database (string): The wiki database to work on.
+        - dumpdate (string): The date of the dump in %Y%m%d format.
+
+        Returns: List of files to upload.
+        """
+        identifier = "wikibase-%s-%s" % (database, dumpdate)
+        iaitem = balchivist.BALArchiver(identifier)
+        allfiles = self.getFiles(database, dumpdate)
+        if self.resume:
+            items = []
+            iafiles = iaitem.getFileList()
+            for dumpfile in allfiles:
+                if dumpfile in iafiles:
+                    continue
+                else:
+                    # The file does not exist in the Internet Archive item
+                    items.append(dumpfile)
+            if items == []:
+                self.common.giveMessage("All files have already been uploaded")
+                return items
+        else:
+            items = allfiles
+
     def archive(self, database, dumpdate, path=None):
         """
         This function is for doing the actual archiving process.
@@ -529,26 +630,11 @@ class BALMWikidata(object):
         """
         identifier = "wikibase-%s-%s" % (database, dumpdate)
         iaitem = balchivist.BALArchiver(identifier)
-        allfiles = self.getFiles(database, dumpdate)
         md = self.getItemMetadata(database, dumpdate)
+        items = self.getFilesToUpload(database, dumpdate)
         headers = {
             'x-archive-size-hint': self.sizehint
         }
-
-        if self.resume:
-            items = []
-            iafiles = iaitem.getFileList()
-            for dumpfile in allfiles:
-                if dumpfile in iafiles:
-                    continue
-                else:
-                    # The file does not exist in the Internet Archive item
-                    items.append(dumpfile)
-            if items == []:
-                self.common.giveMessage("All files have already been uploaded")
-                return True
-        else:
-            items = allfiles
 
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database,
@@ -564,8 +650,11 @@ class BALMWikidata(object):
             # The dump directory is not suitable to be used, exit the function
             return False
 
-        os.chdir(dumps)
-        upload = iaitem.upload(body=items, metadata=md, headers=headers)
+        if (items == []):
+            return True
+        else:
+            os.chdir(dumps)
+            upload = iaitem.upload(body=items, metadata=md, headers=headers)
 
         if (upload and path is None):
             shutil.rmtree(dumps)
@@ -607,53 +696,13 @@ class BALMWikidata(object):
         databases = self.getDatabases()
         for db in databases:
             alldumps = self.getDumpDates(database=db)
-            storeddumps = self.getStoredDumps(database=db)
-            cannotarc = self.getStoredDumps(database=db, can_archive=0)
-            canarc = self.getStoredDumps(database=db, can_archive=1)
-            lastweek = datetime.datetime.now()
-            lastweek -= datetime.timedelta(days=7)
             # Step 1: Ensure that all new dumps are registered
-            for dump in alldumps:
-                if (dump in storeddumps):
-                    self.common.giveMessage("Dump of %s on %s already in the "
-                                            "database, skipping" % (db, dump))
-                    continue
-                else:
-                    self.common.giveMessage("Adding new item %s on "
-                                            "%s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'dumpdate': dump
-                    }
-                    self.addNewItem(params=params)
+            self.updateNewDumps(db, alldumps=alldumps)
             # Step 2: Check if the dump is suitable for archiving
-            for dump in cannotarc:
-                if (dump <= lastweek.strftime("%Y%m%d") and dump in alldumps):
-                    # The dump is now suitable to be archived
-                    self.common.giveMessage("Updating can_archive for %s "
-                                            "on %s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'dumpdate': dump,
-                        'can_archive': 1
-                    }
-                    self.updateCanArchive(params=params)
-                else:
-                    continue
+            self.updateCanArchiveStatus(db, alldumps=alldumps)
             # Step 3: Reset the can_archive statuses of old dumps
-            for dump in canarc:
-                if (dump in alldumps):
-                    continue
-                else:
-                    # The dump is now unable to be archived
-                    self.common.giveMessage("Updating can_archive for %s on "
-                                            "%s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'dumpdate': dump,
-                        'can_archive': 0
-                    }
-                    self.updateCanArchive(params=params)
+            self.updateOldCanArchiveStatus(db, alldumps=alldumps)
+
         return True
 
     def dispatch(self, job, wiki, date, path):

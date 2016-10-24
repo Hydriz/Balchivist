@@ -783,14 +783,15 @@ class BALMDumps(object):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
         else:
             dumps = path
+
         if (self.checkDumpDir(dumps, wiki, date)):
             pass
         else:
             # The dump directory is not suitable to be used, exit the function
             return False
+
         iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
                                         verbose=self.verbose, debug=self.debug)
-
         items = self.getFilesToUpload(wiki=wiki, dumpdate=date, path=path)
         if (items == []):
             return True
