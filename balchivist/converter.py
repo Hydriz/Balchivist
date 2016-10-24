@@ -25,89 +25,88 @@ import message
 
 
 class BALConverter(object):
-    def __init__(self):
-        """
-        This module is used for converting wiki database names and dates into a
-        human-readable format.
+    """
+    This module is used for converting wiki database names and dates into a
+    human-readable format.
 
-        Examples:
-        - "enwiki": "English Wikipedia"
-        - "dewiki": "German Wikipedia"
-        - "20150703": "July 03, 2015"
-        - "150703": "July 03, 2015"
-        - "20150703": "2015-07-03" (for the archivedate metadata)
-        """
-        self.apiUrl = "https://en.wikipedia.org/w/api.php?action=sitematrix"
-        self.apiUrl += "&smtype=language&smlangprop=localname|code&format=json"
-        self.langFile = os.path.dirname(os.path.realpath(__file__)) + '/'
-        self.langFile += "languages.json"
-        self.dbsuffixes = [
-            'wiktionary',
-            'wikibooks',
-            'wikiquote',
-            'wikinews',
-            'wikisource',
-            'wikiversity',
-            'wikivoyage'
-        ]
+    Examples:
+    - "enwiki": "English Wikipedia"
+    - "dewiki": "German Wikipedia"
+    - "20150703": "July 03, 2015"
+    - "150703": "July 03, 2015"
+    - "20150703": "2015-07-03" (for the archivedate metadata)
+    """
+    apiUrl = "https://en.wikipedia.org/w/api.php?action=sitematrix"
+    apiUrl += "&smtype=language&smlangprop=localname|code&format=json"
+    langFile = os.path.dirname(os.path.realpath(__file__)) + '/'
+    langFile += "languages.json"
+    dbsuffixes = [
+        'wiktionary',
+        'wikibooks',
+        'wikiquote',
+        'wikinews',
+        'wikisource',
+        'wikiversity',
+        'wikivoyage'
+    ]
 
-        # The names for the special wikis
-        # Note: Wikimania wikis are not included in this list
-        self.specialnames = {
-            "advisorywiki": "Advisory Board wiki",
-            "betawikiversity": "Beta Wikiversity",
-            "commonswiki": "Wikimedia Commons",
-            "donatewiki": "Donate Wiki",
-            "fdcwiki": "Wikimedia FDC",
-            "foundationwiki": "Wikimedia Foundation wiki",
-            "incubatorwiki": "Wikimedia Incubator",
-            "loginwiki": "Wikimedia Login wiki",
-            "mediawikiwiki": "MediaWiki.org",
-            "metawiki": "Meta-Wiki",
-            "nostalgiawiki": "Nostalgia Wikipedia",
-            "outreachwiki": "Outreach Wiki",
-            "qualitywiki": "Wikimedia Quality",
-            "sourceswiki": "Multilingual Wikisource",
-            "specieswiki": "Wikispecies",
-            "strategywiki": "Wikimedia Strategic Planning",
-            "tenwiki": "Wikipedia 10",
-            "testwikidatawiki": "Wikidata Test Wiki",
-            "testwiki": "Test Wikipedia",
-            "test2wiki": "test2.Wikipedia",
-            "usabilitywiki": "Wikimedia Usability Initiative",
-            "votewiki": "Wikimedia Vote Wiki",
-            "wikidatawiki": "Wikidata"
-        }
+    # The names for the special wikis
+    # Note: Wikimania wikis are not included in this list
+    specialnames = {
+        "advisorywiki": "Advisory Board wiki",
+        "betawikiversity": "Beta Wikiversity",
+        "commonswiki": "Wikimedia Commons",
+        "donatewiki": "Donate Wiki",
+        "fdcwiki": "Wikimedia FDC",
+        "foundationwiki": "Wikimedia Foundation wiki",
+        "incubatorwiki": "Wikimedia Incubator",
+        "loginwiki": "Wikimedia Login wiki",
+        "mediawikiwiki": "MediaWiki.org",
+        "metawiki": "Meta-Wiki",
+        "nostalgiawiki": "Nostalgia Wikipedia",
+        "outreachwiki": "Outreach Wiki",
+        "qualitywiki": "Wikimedia Quality",
+        "sourceswiki": "Multilingual Wikisource",
+        "specieswiki": "Wikispecies",
+        "strategywiki": "Wikimedia Strategic Planning",
+        "tenwiki": "Wikipedia 10",
+        "testwikidatawiki": "Wikidata Test Wiki",
+        "testwiki": "Test Wikipedia",
+        "test2wiki": "test2.Wikipedia",
+        "usabilitywiki": "Wikimedia Usability Initiative",
+        "votewiki": "Wikimedia Vote Wiki",
+        "wikidatawiki": "Wikidata"
+    }
 
-        # The names of the chapter wikis (wikis that end with "wikimedia")
-        self.countrycode = {
-            "ar": "Wikimedia Argentina",
-            "bd": "Wikimedia Bangladesh",
-            "be": "Wikimedia Belgium",
-            "br": "Wikimedia Brazil",
-            "ca": "Wikimedia Canada",
-            "cn": "Wikimedia China",
-            "co": "Wikimedia Colombia",
-            "dk": "Wikimedia Denmark",
-            "et": "Wikimedia Estonia",
-            "fi": "Wikimedia Finland",
-            "il": "Wikimedia Israel",
-            "mk": "Wikimedia Macedonia",
-            "mx": "Wikimedia Mexico",
-            "nl": "Wikimedia Netherlands",
-            "no": "Wikimedia Norway",
-            "nyc": "Wikimedia New York City",  # Unofficial
-            "nz": "Wikimedia New Zealand",
-            "pa-us": "Wikimedia Pennsylvania",  # Unofficial
-            "pl": "Wikimedia Poland",
-            "rs": "Wikimedia Serbia",
-            "ru": "Wikimedia Russia",
-            "se": "Wikimedia Sweden",
-            "tr": "Wikimedia Turkey",
-            "ua": "Wikimedia Ukraine",
-            "uk": "Wikimedia UK",
-            "ve": "Wikimedia Venezuela"
-        }
+    # The names of the chapter wikis (wikis that end with "wikimedia")
+    countrycode = {
+        "ar": "Wikimedia Argentina",
+        "bd": "Wikimedia Bangladesh",
+        "be": "Wikimedia Belgium",
+        "br": "Wikimedia Brazil",
+        "ca": "Wikimedia Canada",
+        "cn": "Wikimedia China",
+        "co": "Wikimedia Colombia",
+        "dk": "Wikimedia Denmark",
+        "et": "Wikimedia Estonia",
+        "fi": "Wikimedia Finland",
+        "il": "Wikimedia Israel",
+        "mk": "Wikimedia Macedonia",
+        "mx": "Wikimedia Mexico",
+        "nl": "Wikimedia Netherlands",
+        "no": "Wikimedia Norway",
+        "nyc": "Wikimedia New York City",  # Unofficial
+        "nz": "Wikimedia New Zealand",
+        "pa-us": "Wikimedia Pennsylvania",  # Unofficial
+        "pl": "Wikimedia Poland",
+        "rs": "Wikimedia Serbia",
+        "ru": "Wikimedia Russia",
+        "se": "Wikimedia Sweden",
+        "tr": "Wikimedia Turkey",
+        "ua": "Wikimedia Ukraine",
+        "uk": "Wikimedia UK",
+        "ve": "Wikimedia Venezuela"
+    }
 
     def getLanguageList(self):
         """
