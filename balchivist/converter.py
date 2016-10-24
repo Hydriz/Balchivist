@@ -166,7 +166,8 @@ class BALConverter(object):
         # It is possible that the code is not found, return False directly
         return langname
 
-    def getDateFromWiki(self, date, archivedate=False):
+    @staticmethod
+    def getDateFromWiki(date, archivedate=False):
         """
         This function converts the date in the format %Y%m%d (e.g. 20150703)
         into different date formats.
@@ -184,7 +185,8 @@ class BALConverter(object):
         else:
             return d.strftime('%B %d, %Y')
 
-    def getDateFromOsm(self, date, archivedate=False):
+    @staticmethod
+    def getDateFromOsm(date, archivedate=False):
         """
         This function converts the date in the format %y%m%d (e.g. 150703) into
         different date formats.
@@ -202,7 +204,8 @@ class BALConverter(object):
         else:
             return d.strftime('%B %d, %Y')
 
-    def getNameFromDB(self, wikidb, format='default', pretext=False):
+    @classmethod
+    def getNameFromDB(cls, wikidb, format='default', pretext=False):
         """
         This function converts the wiki database name into a human-readable
         format.
@@ -220,23 +223,23 @@ class BALConverter(object):
         output = wikidb
         langname = 'English'
         project = 'Wikimedia'
-        if wikidb in self.specialnames:
-            output = self.specialnames[wikidb]
+        if wikidb in cls.specialnames:
+            output = cls.specialnames[wikidb]
         elif wikidb.startswith('wikimania') and wikidb != 'wikimaniateamwiki':
             wmyear = wikidb.replace('wikimania', '').replace('wiki', '')
             output = "Wikimania %s" % (wmyear)
             project = 'Wikimania'
         elif wikidb.endswith('wikimedia'):
             countrycode = wikidb.replace('wikimedia', '').replace('_', '-')
-            if countrycode in self.countrycode:
-                output = self.countrycode[countrycode]
+            if countrycode in cls.countrycode:
+                output = cls.countrycode[countrycode]
                 langname = output
             else:
                 # The country code is not found
                 pass
         elif wikidb.endswith('wiki'):
             code = wikidb.replace('wiki', '').replace('_', '-')
-            langname = self.getLangName(code)
+            langname = cls.getLangName(code)
             project = "Wikipedia"
             if langname:
                 if pretext:
@@ -247,10 +250,10 @@ class BALConverter(object):
                 # The language code is not found
                 pass
         else:
-            for suffix in self.dbsuffixes:
+            for suffix in cls.dbsuffixes:
                 if suffix in wikidb:
                     code = wikidb.replace(suffix, '').replace('_', '-')
-                    langname = self.getLangName(code)
+                    langname = cls.getLangName(code)
                     project = suffix.title()
                     if langname:
                         if pretext:
