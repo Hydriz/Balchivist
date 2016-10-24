@@ -179,7 +179,8 @@ class BALArchiver(object):
             time.sleep(1)  # For Ctrl+C
             if count == 0:
                 upload = self.uploadFile(dumpfile, metadata=metadata,
-                                         headers=headers)
+                                         headers=headers, verify=verify,
+                                         queuederive=queuederive)
                 # Allow the Internet Archive to process the item creation
                 if self.debug:
                     pass
@@ -190,7 +191,8 @@ class BALArchiver(object):
                                             (timenow))
                     time.sleep(30)
             else:
-                upload = self.uploadFile(dumpfile)
+                upload = self.uploadFile(dumpfile, queuederive=queuederive,
+                                         verify=verify)
 
             if upload:
                 self.common.giveDebugMessage(upload)

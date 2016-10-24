@@ -19,7 +19,6 @@ import os
 import re
 import shutil
 import socket
-import time
 import urllib
 
 import balchivist

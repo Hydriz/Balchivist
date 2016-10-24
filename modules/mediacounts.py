@@ -17,7 +17,6 @@
 import datetime
 import os
 import socket
-import time
 import urllib
 
 import balchivist
