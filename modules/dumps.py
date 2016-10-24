@@ -601,6 +601,126 @@ class BALMDumps(object):
                 dumps.append(result[0].strftime("%Y%m%d"))
         return dumps
 
+    def updateNewDumps(self, db):
+        """
+        This function is used to check if all new dumps have been registered
+        and update the database accordingly for new dumps. This function is
+        called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        alldumps = self.getAllDumps(db)
+        stored = self.getStoredDumps(db)
+        for dump in alldumps:
+            if (dump in stored):
+                self.common.giveMessage("Dump of %s on %s already in the "
+                                        "database, skipping" % (db, dump))
+                continue
+            else:
+                self.common.giveMessage("Adding new item %s on "
+                                        "%s" % (db, dump))
+                progress = self.getDumpProgress(db, dump)
+                params = {
+                    'wiki': db,
+                    'date': dump,
+                    'progress': progress
+                }
+                self.addNewItem(params=params)
+
+    def updateDumpStatuses(self, db):
+        """
+        This function is used for checking the dumps that are registered as
+        "in progress" and update the status if those dumps have changed their
+        progress status. This function is called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        inprogress = self.getStoredDumps(db, progress="progress")
+        for dump in inprogress:
+            progress = self.getDumpProgress(db, dump)
+            if (progress != 'progress'):
+                self.common.giveMessage("Updating dump progress for %s "
+                                        "on %s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'date': dump,
+                    'progress': progress
+                }
+                self.updateProgress(params=params)
+            else:
+                continue
+
+    def updateCanArchiveStatus(self, db):
+        """
+        This function is used for checking existing dumps that have been
+        completed and updates the database if these dumps are ready to be
+        archived. This function is called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        cannotarc = self.getStoredDumps(db, progress="done", can_archive=0)
+        for dump in cannotarc:
+            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
+            if (self.checkDumpDir(dumpdir, db, dump)):
+                # The dump is now suitable to be archived
+                self.common.giveMessage("Updating can_archive for %s "
+                                        "on %s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'date': dump,
+                    'can_archive': 1
+                }
+                self.updateCanArchive(params=params)
+            else:
+                continue
+
+    def updateFailedDumps(self, db):
+        """
+        This function is used for checking whether the dumps that have been
+        marked as failed really did fail or have been restarted. This function
+        is called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        failed = self.getStoredDumps(db, progress="error")
+        for dump in failed:
+            progress = self.getDumpProgress(db, dump)
+            if (progress != 'error' and progress != 'unknown'):
+                self.common.giveMessage("Updating dump progress for %s "
+                                        "on %s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'date': dump,
+                    'progress': progress
+                }
+                self.updateProgress(params=params)
+            else:
+                continue
+
+    def updateOldCanArchiveStatus(self, db):
+        """
+        This function is used for checking whether the dumps marked as "can
+        archive" is really able to be archived or has been deleted. This
+        function is called during the "update" job.
+
+        - db (string): The database to work on.
+        """
+        canarc = self.getStoredDumps(db, can_archive=1)
+        for dump in canarc:
+            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
+            if (self.checkDumpDir(dumpdir, db, dump)):
+                continue
+            else:
+                # The dump is now unable to be archived automatically
+                self.common.giveMessage("Updating can_archive for %s on "
+                                        "%s" % (db, dump))
+                params = {
+                    'wiki': db,
+                    'date': dump,
+                    'can_archive': 0
+                }
+                self.updateCanArchive(params=params)
+
     def archive(self, wiki, date, path=None):
         """
         This function is for doing the actual archiving process.
@@ -698,87 +818,17 @@ class BALMDumps(object):
         for private in privatedb:
             alldb.remove(private)
         for db in alldb:
-            dumps = self.getAllDumps(db)
-            stored = self.getStoredDumps(db)
-            inprogress = self.getStoredDumps(db, progress="progress")
-            cannotarc = self.getStoredDumps(db, progress="done",
-                                            can_archive=0)
-            failed = self.getStoredDumps(db, progress="error")
-            canarc = self.getStoredDumps(db, can_archive=1)
             # Step 1: Check if all new dumps are registered
-            for dump in dumps:
-                if (dump in stored):
-                    self.common.giveMessage("Dump of %s on %s already in the "
-                                            "database, skipping" % (db, dump))
-                    continue
-                else:
-                    self.common.giveMessage("Adding new item %s on "
-                                            "%s" % (db, dump))
-                    progress = self.getDumpProgress(db, dump)
-                    params = {
-                        'wiki': db,
-                        'date': dump,
-                        'progress': progress
-                    }
-                    self.addNewItem(params=params)
+            self.updateNewDumps(db)
             # Step 2: Check if the status of dumps in progress have changed
-            for dump in inprogress:
-                progress = self.getDumpProgress(db, dump)
-                if (progress != 'progress'):
-                    self.common.giveMessage("Updating dump progress for %s "
-                                            "on %s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'date': dump,
-                        'progress': progress
-                    }
-                    self.updateProgress(params=params)
-                else:
-                    continue
+            self.updateDumpStatuses(db)
             # Step 3: Check if the dump is available for archiving
-            for dump in cannotarc:
-                dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-                if (self.checkDumpDir(dumpdir, db, dump)):
-                    # The dump is now suitable to be archived
-                    self.common.giveMessage("Updating can_archive for %s "
-                                            "on %s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'date': dump,
-                        'can_archive': 1
-                    }
-                    self.updateCanArchive(params=params)
-                else:
-                    continue
+            self.updateCanArchiveStatus(db)
             # Step 4: Check if failed dumps really did fail or was restarted
-            for dump in failed:
-                progress = self.getDumpProgress(db, dump)
-                if (progress != 'error' and progress != 'unknown'):
-                    self.common.giveMessage("Updating dump progress for %s "
-                                            "on %s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'date': dump,
-                        'progress': progress
-                    }
-                    self.updateProgress(params=params)
-                else:
-                    continue
+            self.updateFailedDumps(db)
             # Step 5: Reset the can_archive statuses of old dumps
-            for dump in canarc:
-                dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-                if (self.checkDumpDir(dumpdir, db, dump)):
-                    continue
-                else:
-                    # The dump is now unable to be archived automatically
-                    self.common.giveMessage("Updating can_archive for %s on "
-                                            "%s" % (db, dump))
-                    params = {
-                        'wiki': db,
-                        'date': dump,
-                        'can_archive': 0
-                    }
-                    self.updateCanArchive(params=params)
+            self.updateOldCanArchiveStatus(db)
+
         return True
 
     def dispatch(self, job, wiki, date, path):
