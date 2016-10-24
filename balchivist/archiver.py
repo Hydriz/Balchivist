@@ -24,7 +24,7 @@ import message
 
 
 class BALArchiver(object):
-    def __init__(self, identifier='', retries=3, retrysleep=30):
+    def __init__(self, identifier='', retries=3):
         """
         This module is used for providing regular functions used for
         uploading files into the Internet Archive. It is an extension of
@@ -32,23 +32,9 @@ class BALArchiver(object):
 
         - identifier (string): The identifier for the item.
         - retries (int): The number of times to retry a request to the server.
-        - retrysleep (int): Time (in seconds) to sleep before the next request.
         """
         self.retries = retries
-        tries = 0
-        while tries < self.retries:
-            try:
-                self.IAItem = internetarchive.Item(identifier,
-                                                   max_retries=retries)
-                break
-            except:
-                tries += 1
-                if (tries == self.retries):
-                    return None
-                    break
-                else:
-                    time.sleep(60*tries)
-
+        self.identifier = identifier
         # Files that are present by default in all Internet Archive items
         self.defaultFiles = [
             '%s_archive.torrent' % (identifier),
@@ -65,10 +51,10 @@ class BALArchiver(object):
         Returns: List of files in the item excluding default files in
         alphabetical order.
         """
-        files = self.IAItem.files
+        files = internetarchive.get_files(identifier=self.identifier)
         filelist = []
         for thefile in files:
-            filename = thefile['name']
+            filename = thefile.name
             if filename in self.defaultFiles:
                 continue
             else:
@@ -76,13 +62,12 @@ class BALArchiver(object):
         return sorted(filelist)
 
     def uploadFile(self, body, key=None, metadata={}, headers={},
-                   queuederive=False, verify=True, debug=False):
+                   queuederive=False, verbose=False, verify=True, debug=False):
         """
         This function will upload a single file to the item on the Internet
         Archive.
 
-        - body (string): The path to the file to upload.
-        - key (string): The name of the uploaded file.
+        - body (string or list): The path to the file(s) to upload.
         - metadata (dict): The metadata for the Internet Archive item.
         - headers (dict): The headers to send when sending the request.
         - queuederive (boolean): Whether or not to derive the item after the
@@ -101,15 +86,16 @@ class BALArchiver(object):
             scanner = 'Balchivist Python Library %s' % (BALVERSION)
             metadata['scanner'] = scanner
 
-        iaupload = self.IAItem.upload_file
+        iaupload = internetarchive.upload
         tries = 0
 
         while tries < self.retries:
             try:
-                iaupload(body, key=key, metadata=metadata, headers=headers,
-                         queue_derive=queuederive, verify=verify, debug=debug)
+                iaupload(identifier=self.identifier, files=body,
+                         metadata=metadata, headers=headers,
+                         queue_derive=queuederive, verbose=verbose,
+                         verify=verify, debug=debug, retries=self.retries)
                 return True
-                break
             except Exception as exception:
                 tries += 1
                 if debug:
@@ -120,14 +106,16 @@ class BALArchiver(object):
                 else:
                     time.sleep(60*tries)
 
-    def modifyMetadata(self, metadata, target='metadata', priority=None,
-                       debug=False):
+    def modifyMetadata(self, metadata, target='metadata', append=False,
+                       priority=None, debug=False):
         """
         This function will modify the metadata of an item on the Internet
         Archive.
 
         - metadata (dict): The metadata to modify for the item.
         - target (string): The metadata target to update.
+        - append (boolean): Whether or not to append the metadata values to the
+        current values instead of replacing them.
         - priority (int): The priority for the metadata update task.
         - debug (boolean): Whether or not to run this function in debug mode.
 
@@ -137,13 +125,14 @@ class BALArchiver(object):
             scanner = 'Balchivist Python Library %s' % (BALVERSION)
             metadata['scanner'] = scanner
         tries = 0
+        iamodifymd = internetarchive.modify_metadata
 
         while tries < self.retries:
             try:
-                self.IAItem.modify_metadata(metadata=metadata, target=target,
-                                            priority=priority, debug=debug)
+                iamodifymd(identifier=self.identifier, metadata=metadata,
+                           target=target, append=append, priority=priority,
+                           debug=debug)
                 return True
-                break
             except Exception as exception:
                 tries += 1
                 if debug:
