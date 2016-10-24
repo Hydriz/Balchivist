@@ -39,6 +39,7 @@ class BALMDumps(object):
 
     config = balchivist.BALConfig('dumps')
     conv = balchivist.BALConverter()
+    hostname = socket.gethostname()
 
     resume = False
     dbtable = "dumps"
