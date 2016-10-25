@@ -16,7 +16,6 @@
 
 import datetime
 import os
-import re
 import shutil
 import socket
 import urllib
