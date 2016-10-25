@@ -16,7 +16,6 @@
 
 import datetime
 import os
-import urllib
 
 import balchivist
 
@@ -417,6 +416,7 @@ class BALMMediacounts(object):
 
         if (path is None):
             dumps = self.tempdir
+            d = datetime.datetime.strptime(dumpdate, '%Y%m%d')
             baseurl = "%s/%s" % (self.config.get('baseurl'), d.strftime('%Y'))
             self.common.downloadFiles(filelist=allfiles, directory=dumps,
                                       baseurl=baseurl)

@@ -17,7 +17,6 @@
 import datetime
 import os
 import shutil
-import urllib
 
 import balchivist
 
