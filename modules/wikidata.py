@@ -208,24 +208,6 @@ class BALMWikidata(object):
                 return False
         return True
 
-    def getSqlConds(self, params):
-        """
-        This function is used for getting the conditions necessary for the
-        SQL query to work.
-
-        - params (dict): Information about the item with the keys "wiki"
-        and "dumpdate".
-
-        Returns: String with the SQL-like conditions.
-        """
-        arcdate = self.conv.getDateFromWiki(params['dumpdate'],
-                                            archivedate=True)
-        conds = [
-            'wiki="%s"' % (params['wiki']),
-            'dumpdate="%s"' % (arcdate)
-        ]
-        return ' AND '.join(conds)
-
     def getItemsLeft(self, job=None):
         """
         This function is used for getting the number of items left to be done
@@ -349,7 +331,7 @@ class BALMWikidata(object):
             'can_archive': '"%s"' % (params['can_archive'])
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markArchived(self, params):
         """
@@ -365,7 +347,7 @@ class BALMWikidata(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markChecked(self, params):
         """
@@ -381,7 +363,7 @@ class BALMWikidata(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markFailedArchive(self, params):
         """
@@ -397,7 +379,7 @@ class BALMWikidata(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markFailedCheck(self, params):
         """
@@ -413,7 +395,7 @@ class BALMWikidata(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def addNewItem(self, params):
         """
@@ -639,7 +621,7 @@ class BALMWikidata(object):
         """
         updatedetails = {
             'wiki': wiki,
-            'dumpdate': date
+            'dumpdate': self.conv.getDateFromWiki(date, archivedate=True)
         }
 
         # Claim the item from the database server if not in debug mode

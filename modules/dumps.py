@@ -350,24 +350,6 @@ class BALMDumps(object):
             output = {}
         return output
 
-    def getSqlConds(self, params):
-        """
-        This function is used for getting the conditions necessary for the
-        SQL query to work.
-
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
-
-        Returns: String with the SQL-like conditions.
-        """
-        arcdate = self.conv.getDateFromWiki(params['date'],
-                                            archivedate=True)
-        conds = [
-            'wiki="%s"' % (params['wiki']),
-            'dumpdate="%s"' % (arcdate)
-        ]
-        return ' AND '.join(conds)
-
     def getNumberOfItems(self, params={}):
         """
         This function is used to get the number of items left to work with.
@@ -441,7 +423,7 @@ class BALMDumps(object):
             'can_archive': '"%s"' % (params['can_archive'])
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markArchived(self, params):
         """
@@ -457,7 +439,7 @@ class BALMDumps(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markChecked(self, params):
         """
@@ -473,7 +455,7 @@ class BALMDumps(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markFailedArchive(self, params):
         """
@@ -489,7 +471,7 @@ class BALMDumps(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def markFailedCheck(self, params):
         """
@@ -505,7 +487,7 @@ class BALMDumps(object):
             'claimed_by': 'NULL'
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def updateProgress(self, params):
         """
@@ -520,7 +502,7 @@ class BALMDumps(object):
             'progress': '"%s"' % (params['progress'])
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
+                                 conds=self.sqldb.getConds(params=params))
 
     def addNewItem(self, params):
         """
@@ -630,7 +612,8 @@ class BALMDumps(object):
                                         "on %s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'date': dump,
+                    'dumpdate': self.conv.getDateFromWiki(dump,
+                                                          archivedate=True),
                     'progress': progress
                 }
                 self.updateProgress(params=params)
@@ -654,7 +637,8 @@ class BALMDumps(object):
                                         "on %s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'date': dump,
+                    'dumpdate': self.conv.getDateFromWiki(dump,
+                                                          archivedate=True),
                     'can_archive': 1
                 }
                 self.updateCanArchive(params=params)
@@ -677,7 +661,8 @@ class BALMDumps(object):
                                         "on %s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'date': dump,
+                    'dumpdate': self.conv.getDateFromWiki(dump,
+                                                          archivedate=True),
                     'progress': progress
                 }
                 self.updateProgress(params=params)
@@ -703,7 +688,8 @@ class BALMDumps(object):
                                         "%s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'date': dump,
+                    'dumpdate': self.conv.getDateFromWiki(dump,
+                                                          archivedate=True),
                     'can_archive': 0
                 }
                 self.updateCanArchive(params=params)
@@ -839,7 +825,7 @@ class BALMDumps(object):
         """
         updatedetails = {
             'wiki': wiki,
-            'dumpdate': date
+            'dumpdate': self.conv.getDateFromWiki(date, archivedate=True)
         }
 
         # Claim the item from the database server if not in debug mode
