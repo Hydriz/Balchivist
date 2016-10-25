@@ -134,31 +134,6 @@ class BALMMediacounts(object):
             output.append(dumpfile % (arcdate))
         return output
 
-    def downloadFiles(self, dumpdate, filelist):
-        """
-        This function is used for downloading the relevant files for a
-        particular dump.
-
-        - dumpdate (string in %Y%m%d format): The date of the dump to work on.
-        - filelist (list): The list of files to work on.
-
-        Returns: True if successful, False if an error has occured.
-        """
-        fileopener = urllib.URLopener()
-        os.chdir(self.tempdir)
-        for dumpfile in filelist:
-            if (os.path.isfile(dumpfile)):
-                continue
-            else:
-                self.common.giveMessage("Downloading file: %s" % (dumpfile))
-                d = datetime.datetime.strptime(dumpdate, '%Y%m%d')
-                fileurl = "%s/%s/%s" % (self.config.get('baseurl'),
-                                        d.strftime('%Y'), dumpfile)
-                try:
-                    fileopener.retrieve(fileurl, dumpfile)
-                except:
-                    return False
-
     def removeFiles(self, filelist):
         """
         This function is used for removing all the downloaded files for a
@@ -462,7 +437,9 @@ class BALMMediacounts(object):
 
         if (path is None):
             dumps = self.tempdir
-            self.downloadFiles(dumpdate=dumpdate, filelist=allfiles)
+            baseurl = "%s/%s" % (self.config.get('baseurl'), d.strftime('%Y'))
+            self.common.downloadFiles(filelist=allfiles, directory=dumps,
+                                      baseurl=baseurl)
         else:
             dumps = path
 

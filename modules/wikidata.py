@@ -184,33 +184,6 @@ class BALMWikidata(object):
         }
         return metadata
 
-    def downloadFiles(self, database, dumpdate, filelist):
-        """
-        This function is used for downloading all the available dump files for
-        a given wiki and saves them into the temporary directory.
-
-        - database (string): The database for the dump files.
-        - dumpdate (string in %Y%m%d format): The date of the current dump.
-        - filelist (list): A list of files generated from self.getFiles().
-        """
-        fileopener = urllib.URLopener()
-        dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database, dumpdate)
-
-        if (os.path.exists(dumps)):
-            pass
-        else:
-            os.makedirs(dumps)
-
-        os.chdir(dumps)
-        for dumpfile in filelist:
-            if (os.path.isfile(dumpfile)):
-                continue
-            else:
-                self.common.giveMessage("Downloading file: %s" % (dumpfile))
-                fileurl = "%s/%s/%s/%s" % (self.config.get('baseurl'),
-                                           database, dumpdate, dumpfile)
-                fileopener.retrieve(fileurl, dumpfile)
-
     def checkDumpDir(self, path, filelist):
         """
         This function is used to check if the given dump directory is complete.
@@ -610,8 +583,10 @@ class BALMWikidata(object):
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database,
                                   dumpdate)
-            self.downloadFiles(database=database, dumpdate=dumpdate,
-                               filelist=items)
+            baseurl = "%s/%s/%s" % (self.config.get('baseurl'), database,
+                                    dumpdate)
+            self.common.downloadFiles(filelist=items, directory=dumps,
+                                      baseurl=baseurl)
         else:
             dumps = path
 

@@ -128,6 +128,36 @@ class BALCommon(object):
                 links.append(link)
         return sorted(links)
 
+    def downloadFiles(self, filelist, directory, baseurl):
+        """
+        This function is used for downloading all the files for a given dump
+        into the given directory.
+
+        - filelist (list): The list of files from the dump to work on.
+        - directory (string): The path to the directory that will store the
+        downloaded files.
+        - baseurl (string): The URL to the directory that contains the files.
+        """
+        fileopener = urllib.URLopener()
+
+        if (os.path.exists(directory)):
+            pass
+        else:
+            os.makedirs(directory)
+
+        os.chdir(directory)
+        for thefile in filelist:
+            if (os.path.isfile(thefile)):
+                continue
+            else:
+                self.common.giveMessage("Downloading file: %s" % (thefile))
+                fileurl = "%s/%s" % (baseurl, thefile)
+                try:
+                    fileopener.retrieve(fileurl, thefile)
+                except:
+                    return False
+
+
 
 if __name__ == "__main__":
     BALMessage = message.BALMessage()
