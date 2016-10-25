@@ -51,9 +51,8 @@ class BALMWikidata(object):
 
     def __init__(self, params={}, sqldb=None):
         """
-        This module is for archiving the Wikidata JSON dumps provided by the
-        Wikimedia Foundation (available at
-        <https://dumps.wikimedia.org/other/wikibase/>) to the Internet Archive.
+        This function is executed when a new instance of BALMWikidata is
+        initialized.
 
         - params (dict): Information about what is to be done about a given
         item. The "verbose" and "debug" parameters are necessary.
@@ -94,40 +93,13 @@ class BALMWikidata(object):
                            help="Resume uploading a wiki dump instead of "
                            "restarting all over.")
 
-    def extractLinks(self, url):
-        """
-        This function is for getting a list of links for the given URL.
-
-        - url (string): The URL to work on.
-
-        Returns list of links without the trailing slash and the parent
-        directory.
-        """
-        links = []
-        page = urllib.urlopen(url)
-        raw = page.read()
-        page.close()
-
-        regex = r'<a href="(?P<link>[^>]+)">'
-        m = re.compile(regex).finditer(raw)
-        for i in m:
-            database = i.group('link')
-            if (database == "../"):
-                # Skip the parent directory
-                continue
-            elif (database.endswith('/')):
-                links.append(database[:-1])
-            else:
-                links.append(database)
-        return sorted(links)
-
     def getDatabases(self):
         """
         This function is for getting a list of all wiki databases with dumps.
 
         Returns list of all databases.
         """
-        return self.extractLinks(self.config.get('baseurl'))
+        return self.common.extractLinks(self.config.get('baseurl'))
 
     def getDumpDates(self, database):
         """
@@ -139,7 +111,7 @@ class BALMWikidata(object):
         Returns list of all dump dates (in %Y%m%d format).
         """
         url = "%s/%s/" % (self.config.get('baseurl'), database)
-        return self.extractLinks(url)
+        return self.common.extractLinks(url)
 
     def getFiles(self, database, dumpdate):
         """
@@ -151,7 +123,7 @@ class BALMWikidata(object):
         Returns list of all files.
         """
         url = "%s/%s/%s/" % (self.config.get('baseurl'), database, dumpdate)
-        return self.extractLinks(url)
+        return self.common.extractLinks(url)
 
     def getStoredDumps(self, database, can_archive="all"):
         """

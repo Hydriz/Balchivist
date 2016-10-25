@@ -93,6 +93,39 @@ class BALCommon(object):
         else:
             pass
 
+    def extractLinks(self, url):
+        """
+        This function is for getting a list of links for the given URL. Note
+        that this function only works if the given URL contains links that are
+        in the format <a href="LINK">TEXT</a> and that LINK is a relative
+        path to the current URL.
+
+        Also, the returned output may contain a mixture of files and
+        directories, which may not be the intended result for most use cases.
+
+        - url (string): The URL to work on.
+
+        Returns list of links without the trailing slash and the parent
+        directory.
+        """
+        links = []
+        page = urllib.urlopen(url)
+        raw = page.read()
+        page.close()
+
+        regex = r'<a href="(?P<link>[^>]+)">'
+        m = re.compile(regex).finditer(raw)
+        for i in m:
+            link = i.group('link')
+            if (link == "../"):
+                # Skip the parent directory
+                continue
+            elif (link.endswith('/')):
+                links.append(link[:-1])
+            else:
+                links.append(link)
+        return sorted(links)
+
 
 if __name__ == "__main__":
     BALMessage = message.BALMessage()

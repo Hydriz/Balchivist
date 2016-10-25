@@ -53,10 +53,8 @@ class BALMMediacounts(object):
 
     def __init__(self, params={}, sqldb=None):
         """
-        This module is for archiving the statistics on visits to media files
-        provided by the Wikimedia Foundation (available at
-        <https://dumps.wikimedia.org/other/mediacounts/>) to the Internet
-        Archive.
+        This function is executed when a new BALMMediacounts instance is
+        initialized.
 
         - params (dict): Information about what is to be done about a given
         item. The "verbose" and "debug" parameters are necessary.
