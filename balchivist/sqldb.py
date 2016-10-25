@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import MySQLdb
+import socket
 
 from config import BALConfig
 from exception import IncorrectUsage
@@ -22,11 +23,17 @@ import message
 
 
 class BALSqlDb(object):
+    """
+    This module is used to provide an interface for interacting with an SQL
+    database and the regular functions specific to Balchivist.
+    """
+    hostname = socket.gethostname()
+
     def __init__(self, database="balchivist", host="localhost",
                  default='~/.my.cnf'):
         """
-        This module is used to provide an interface for interacting with an
-        SQL database and the regular functions specific to Balchivist.
+        This function is executed when a new instance of BALSqlDb is
+        initialized.
 
         - database (string): The database name to work with.
         - host (string): The MySQL server hosting the database
@@ -46,6 +53,42 @@ class BALSqlDb(object):
         return cls(database=config.get('database'),
                    host=config.get('host'),
                    default=config.get('defaults_file'))
+
+    def getConds(self, params):
+        """
+        This function is used for getting the conditions necessary for the
+        SQL query to work.
+
+        - params (dict): A dictionary of the conditions to transform.
+
+        Returns: String with the SQL-like conditions.
+        """
+        conds = []
+        for cond in params:
+            conds.append('%s="%s"' % (cond, params[cond]))
+        return ' AND '.join(conds)
+
+    def claimItem(self, params, dbtable=None):
+        """
+        This function is used to claim an item from the database to prevent
+        other instances of Balchivist from operating on the same item.
+
+        Note: This function will only work if the module supports claiming of
+        items and that all claims are tracked under the "claimed_by" column,
+        which should be the case for most modules.
+
+        - params (dict): Information about the item to claim, must be as
+        unique as possible.
+        - dbtable (string): The name of the database table.
+
+        Returns: True if the operation is successful, False if an error has
+        occurred.
+        """
+        vals = {
+            'claimed_by': '"%s"' % (self.hostname)
+        }
+        return self.update(dbtable=dbtable, values=vals,
+                           conds=self.getConds(params=params))
 
     def execute(self, query, params=()):
         """

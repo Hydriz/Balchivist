@@ -17,7 +17,6 @@
 import datetime
 import os
 import re
-import socket
 import time
 import urllib
 
@@ -39,7 +38,6 @@ class BALMDumps(object):
 
     config = balchivist.BALConfig('dumps')
     conv = balchivist.BALConverter()
-    hostname = socket.gethostname()
 
     resume = False
     dbtable = "dumps"
@@ -509,21 +507,6 @@ class BALMDumps(object):
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.getSqlConds(params=params))
 
-    def claimItem(self, params):
-        """
-        This function is used to claim an item from the server.
-
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
-
-        Returns: True if update is successful, False if an error occurred.
-        """
-        vals = {
-            'claimed_by': '"%s"' % (self.hostname)
-        }
-        return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
-
     def updateProgress(self, params):
         """
         This function is used to update the progress of a dump.
@@ -856,14 +839,14 @@ class BALMDumps(object):
         """
         updatedetails = {
             'wiki': wiki,
-            'date': date
+            'dumpdate': date
         }
 
         # Claim the item from the database server if not in debug mode
         if self.debug:
             pass
         else:
-            self.claimItem(params=updatedetails)
+            self.sqldb.claimItem(params=updatedetails, dbtable=self.dbtable)
 
         msg = "Running %s on the main Wikimedia database " % (job)
         msg += "dump of %s on %s" % (wiki, date)

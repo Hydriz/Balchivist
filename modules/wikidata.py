@@ -17,7 +17,6 @@
 import datetime
 import os
 import shutil
-import socket
 import urllib
 
 import balchivist
@@ -38,7 +37,6 @@ class BALMWikidata(object):
     dbtable = "wikidata"
     conv = balchivist.BALConverter()
     resume = False
-    hostname = socket.gethostname()
 
     jobs = [
         "archive",
@@ -418,21 +416,6 @@ class BALMWikidata(object):
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.getSqlConds(params=params))
 
-    def claimItem(self, params):
-        """
-        This function is used to claim an item from the server.
-
-        - params (dict): Information about the item with the keys "wiki"
-        and "dumpdate".
-
-        Returns: True if update is successful, False if an error occurred.
-        """
-        vals = {
-            'claimed_by': '"%s"' % (self.hostname)
-        }
-        return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                 conds=self.getSqlConds(params=params))
-
     def addNewItem(self, params):
         """
         This function is used to insert a new item into the database.
@@ -664,7 +647,7 @@ class BALMWikidata(object):
         if self.debug:
             pass
         else:
-            self.claimItem(params=updatedetails)
+            self.sqldb.claimItem(params=updatedetails, dbtable=self.dbtable)
 
         msg = "Running %s on the JSON dumps of all Wikibase entries " % (job)
         msg += "for %s on %s" % (wiki, date)

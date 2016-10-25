@@ -16,7 +16,6 @@
 
 import datetime
 import os
-import socket
 import urllib
 
 import balchivist
@@ -36,7 +35,6 @@ class BALMMediacounts(object):
     config = balchivist.BALConfig("mediacounts")
     dbtable = "mediacounts"
     conv = balchivist.BALConverter()
-    hostname = socket.gethostname()
     tempdir = config.get('dumpdir')
     filelist = [
         "mediacounts.%s.v00.tsv.bz2",
@@ -400,24 +398,6 @@ class BALMMediacounts(object):
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds="dumpdate=\"%s\"" % (arcdate))
 
-    def claimItem(self, dumpdate):
-        """
-        This function is used to claim an item from the server.
-
-        - dumpdate (string in %Y%m%d format): The date of the dump to work on.
-
-        Returns: True if update is successful, False if an error occurred.
-        """
-        if (self.debug):
-            return True
-        else:
-            vals = {
-                'claimed_by': '"%s"' % (self.hostname)
-            }
-            arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
-            return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                     conds="dumpdate=\"%s\"" % (arcdate))
-
     def archive(self, dumpdate, path=None):
         """
         This function is for doing the actual archiving process.
@@ -535,7 +515,16 @@ class BALMMediacounts(object):
         """
         This function is for dispatching an item to the various functions.
         """
-        self.claimItem(dumpdate=date)
+        # Claim the item from the database server if not in debug mode
+        if self.debug:
+            pass
+        else:
+            arcdate = self.conv.getDateFromWiki(date, archivedate=True)
+            itemdetails = {
+                'dumpdate': arcdate
+            }
+            self.sqldb.claimItem(params=itemdetails, dbtable=self.dbtable)
+
         msg = "Running %s on the Wikimedia media files visit " % (job)
         msg += "statistics on %s" % (date)
         self.common.giveMessage(msg)

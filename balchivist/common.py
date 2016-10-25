@@ -158,7 +158,6 @@ class BALCommon(object):
                     return False
 
 
-
 if __name__ == "__main__":
     BALMessage = message.BALMessage()
     raise IncorrectUsage(BALMessage.getMessage('exception-incorrectusage'))
