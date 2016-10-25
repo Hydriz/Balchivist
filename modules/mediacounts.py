@@ -149,35 +149,6 @@ class BALMMediacounts(object):
                 return False
         return True
 
-    def checkDumpDir(self, path, filelist):
-        """
-        This function is used to check if the given dump directory is complete.
-
-        - path (string): The path to the dump directory.
-        - filelist (list): A list of files generated from self.getFiles().
-
-        Returns: True if the dump directory is complete, False if otherwise.
-        """
-        if (os.path.exists(path)):
-            files = os.listdir(path)
-        else:
-            # The dump directory does not exist, something wrong probably
-            # happened along the way.
-            self.common.giveDebugMessage("The dump file directory does not "
-                                         "exist!")
-            return False
-
-        for dumpfile in filelist:
-            if (dumpfile in files):
-                continue
-            else:
-                # The dump files on the local directory is incomplete.
-                # Exit the rest of the function and leave it to another day.
-                self.common.giveDebugMessage("The dump files in the local "
-                                             "directory is incomplete!")
-                return False
-        return True
-
     def getDumpDates(self, can_archive="all"):
         """
         This function is for getting all the date of dumps presently stored in
@@ -423,7 +394,7 @@ class BALMMediacounts(object):
         else:
             dumps = path
 
-        if (self.checkDumpDir(path=dumps, filelist=allfiles)):
+        if (self.common.checkDumpDir(path=dumps, filelist=allfiles)):
             pass
         else:
             # The dump directory is not suitable to be used, exit the function

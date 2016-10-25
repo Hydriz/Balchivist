@@ -96,6 +96,35 @@ class BALCommon(object):
         else:
             pass
 
+    def checkDumpDir(self, path, filelist):
+        """
+        This function is used to check if the given dump directory contains all
+        the files
+
+        - path (string): The path to the dump directory.
+        - filelist (list): A list of files that is supposed to be in the dump.
+
+        Returns: True if the dump directory is complete, False if otherwise.
+        """
+        if (os.path.exists(path)):
+            files = os.listdir(path)
+        else:
+            # The dump directory does not exist, something wrong probably
+            # happened along the way.
+            self.giveDebugMessage("The dump file directory does not exist!")
+            return False
+
+        for dumpfile in filelist:
+            if (dumpfile in files):
+                continue
+            else:
+                # The dump files on the local directory is incomplete.
+                # Exit the rest of the function and leave it to another day.
+                self.giveDebugMessage("The dump files in the local directory "
+                                      "is incomplete!")
+                return False
+        return True
+
     def extractLinks(self, url):
         """
         This function is for getting a list of links for the given URL. Note

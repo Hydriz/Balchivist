@@ -267,36 +267,6 @@ class BALMDumps(object):
             dumps.append(i.group('dump'))
         return sorted(dumps)
 
-    def checkDumpDir(self, path, wiki, date):
-        """
-        This function is used to check if the given dump directory is complete.
-
-        - path (string): The path to the dump directory.
-        - wiki (string): The wiki database to check.
-        - date (string): The date of the dump in %Y%m%d format.
-
-        Returns: True if dump directory is complete, False if otherwise.
-        """
-        if (os.path.exists(path)):
-            files = os.listdir(path)
-        else:
-            # The dump directory does not exist.
-            # Exit the rest of the function and leave it to another day.
-            self.common.giveDebugMessage("The dump file directory does not "
-                                         "exist!")
-            return False
-        allfiles = self.getDumpFiles(wiki, date)
-        for dumpfile in allfiles:
-            if (dumpfile in files):
-                continue
-            else:
-                # The dump files on the local directory is incomplete.
-                # Exit the rest of the function and leave it to another day.
-                self.common.giveDebugMessage("The dump files in the local "
-                                             "directory is incomplete!")
-                return False
-        return True
-
     def getItemsLeft(self, job=None):
         """
         This function is used for getting the number of items left to be done
@@ -631,7 +601,8 @@ class BALMDumps(object):
         cannotarc = self.getStoredDumps(db, progress="done", can_archive=0)
         for dump in cannotarc:
             dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            if (self.checkDumpDir(dumpdir, db, dump)):
+            allfiles = self.getDumpFiles(wiki, date)
+            if (self.common.checkDumpDir(dumpdir, allfiles)):
                 # The dump is now suitable to be archived
                 self.common.giveMessage("Updating can_archive for %s "
                                         "on %s" % (db, dump))
@@ -680,7 +651,8 @@ class BALMDumps(object):
         canarc = self.getStoredDumps(db, can_archive=1)
         for dump in canarc:
             dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            if (self.checkDumpDir(dumpdir, db, dump)):
+            allfiles = self.getDumpFiles(wiki, date)
+            if (self.common.checkDumpDir(dumpdir, allfiles)):
                 continue
             else:
                 # The dump is now unable to be archived automatically
@@ -747,13 +719,14 @@ class BALMDumps(object):
         headers = {
             'x-archive-size-hint': self.sizehint
         }
+        allfiles = self.getDumpFiles(wiki, date)
 
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
         else:
             dumps = path
 
-        if (self.checkDumpDir(dumps, wiki, date)):
+        if (self.common.checkDumpDir(dumps, allfiles)):
             pass
         else:
             # The dump directory is not suitable to be used, exit the function
