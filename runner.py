@@ -30,15 +30,14 @@ class BALRunner(object):
         is designed to run indefinitely.
         """
         config = balchivist.BALConfig('main')
-        self.sqldb = balchivist.BALSqlDb(database=config.get('database'),
-                                         host=config.get('host'),
-                                         default=config.get('defaults_file'))
+        self.sqldb = balchivist.BALSqlDb.getFromConf()
         self.modules = json.loads(config.get('modules'))
         self.message = balchivist.BALMessage()
 
-    def execute(self):
+    def parseArguments(self):
         """
-        This function is the main execution function for the archiving scripts.
+        This function is for parsing the command line arguments passed by the
+        user into the script.
         """
         IncorrectUsage = balchivist.exception.IncorrectUsage
         version = balchivist.BALVERSION
@@ -87,9 +86,15 @@ class BALRunner(object):
 
         for module in self.modules:
             classname = "BALM" + module.title()
-            ClassModule = getattr(modules, classname)(argparse=True)
-            ClassModule.argparse(parser=parser)
+            getattr(modules, classname).argparse(parser=parser)
 
+        return parser
+
+    def execute(self):
+        """
+        This function is the main execution function for the archiving scripts.
+        """
+        parser = self.parseArguments()
         # Let's parse the arguments given by the user now
         args = parser.parse_args()
         common = balchivist.BALCommon(verbose=args.verbose, debug=args.debug)

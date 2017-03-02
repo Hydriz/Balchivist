@@ -19,12 +19,13 @@ import time
 import internetarchive
 
 from . import BALVERSION
+import common
 from exception import IncorrectUsage
 import message
 
 
 class BALArchiver(object):
-    def __init__(self, identifier='', retries=3, retrysleep=30):
+    def __init__(self, identifier='', retries=3, debug=False, verbose=False):
         """
         This module is used for providing regular functions used for
         uploading files into the Internet Archive. It is an extension of
@@ -32,21 +33,14 @@ class BALArchiver(object):
 
         - identifier (string): The identifier for the item.
         - retries (int): The number of times to retry a request to the server.
-        - retrysleep (int): Time (in seconds) to sleep before the next request.
+        - debug (boolean): Whether or not to provide debugging output.
+        - verbose (boolean): Whether or not to provide more verbosity.
         """
         self.retries = retries
-        tries = 0
-        while tries < self.retries:
-            try:
-                self.IAItem = internetarchive.get_item(identifier)
-                break
-            except:
-                tries += 1
-                if (tries == self.retries):
-                    return None
-                    break
-                else:
-                    time.sleep(60*tries)
+        self.identifier = identifier
+        self.debug = debug
+        self.verbose = verbose
+        self.common = common.BALCommon(debug=debug, verbose=verbose)
 
         # Files that are present by default in all Internet Archive items
         self.defaultFiles = [
@@ -56,17 +50,36 @@ class BALArchiver(object):
             '%s_meta.xml' % (identifier)
         ]
 
+    def handleException(self, exception):
+        """
+        This function is for handling exceptions caught when making a request
+        to the Internet Archive.
+
+        - exception (object): The exception object caught.
+        """
+        msg = "%s was caught" % (type(exception).__name__)
+        self.common.giveDebugMessage(msg)
+
     def getFileList(self):
         """
         This function is used to get the list of files in an item and excludes
         the default files that are present in all Internet Archive items.
 
         Returns: List of files in the item excluding default files in
-        alphabetical order.
+        alphabetical order. False if an error has occurred.
         """
-        files = self.IAItem.files
+        tries = 0
+        while tries < self.retries:
+            try:
+                iaitem = internetarchive.get_item(identifier=self.identifier)
+            except Exception as exception:
+                self.handleException(exception=exception)
+                if tries == self.retries:
+                    return False
+                else:
+                    time.sleep(60*tries)
         filelist = []
-        for thefile in files:
+        for thefile in iaitem.files:
             filename = thefile['name']
             if filename in self.defaultFiles:
                 continue
@@ -74,22 +87,18 @@ class BALArchiver(object):
                 filelist.append(filename)
         return sorted(filelist)
 
-    def uploadFile(self, body, key=None, metadata={}, headers={},
-                   queuederive=False, verify=True, debug=False):
+    def uploadFile(self, body, metadata={}, headers={}, queuederive=False,
+                   verify=True):
         """
         This function will upload a single file to the item on the Internet
         Archive.
 
-        - body (string): The path to the file to upload.
-        - key (string): The name of the uploaded file.
+        - body (string or list): The path to the file(s) to upload.
         - metadata (dict): The metadata for the Internet Archive item.
         - headers (dict): The headers to send when sending the request.
         - queuederive (boolean): Whether or not to derive the item after the
         file is uploaded.
         - verify (boolean): Whether or not to verify that the file is uploaded.
-        - debug (boolean): Whether or not to run this upload in debug mode.
-        The actual file will not be uploaded, but the requests sent will be
-        returned.
 
         Returns: True if the file is successfully uploaded, False if errors
         are encountered.
@@ -99,36 +108,35 @@ class BALArchiver(object):
         if not metadata.get('scanner'):
             scanner = 'Balchivist Python Library %s' % (BALVERSION)
             metadata['scanner'] = scanner
-
-        iaupload = self.IAItem.upload_file
         tries = 0
+        iaupload = internetarchive.upload
 
         while tries < self.retries:
             try:
-                iaupload(body, key=key, metadata=metadata, headers=headers,
-                         queue_derive=queuederive, verify=verify, debug=debug)
+                iaupload(identifier=self.identifier, files=body,
+                         metadata=metadata, headers=headers,
+                         queue_derive=queuederive, verbose=self.verbose,
+                         verify=verify, debug=self.debug, retries=self.retries)
                 return True
-                break
             except Exception as exception:
-                tries += 1
-                if debug:
-                    print "%s was caught" % (type(exception).__name__)
-                    return False
-                elif tries == self.retries:
+                self.handleException(exception=exception)
+                if tries == self.retries:
                     return False
                 else:
+                    tries += 1
                     time.sleep(60*tries)
 
-    def modifyMetadata(self, metadata, target='metadata', priority=None,
-                       debug=False):
+    def modifyMetadata(self, metadata, target='metadata', append=False,
+                       priority=None):
         """
         This function will modify the metadata of an item on the Internet
         Archive.
 
         - metadata (dict): The metadata to modify for the item.
         - target (string): The metadata target to update.
+        - append (boolean): Whether or not to append the metadata values to the
+        current values instead of replacing them.
         - priority (int): The priority for the metadata update task.
-        - debug (boolean): Whether or not to run this function in debug mode.
 
         Returns: True if the modification is successful, False if otherwise.
         """
@@ -136,22 +144,64 @@ class BALArchiver(object):
             scanner = 'Balchivist Python Library %s' % (BALVERSION)
             metadata['scanner'] = scanner
         tries = 0
+        iamodifymd = internetarchive.modify_metadata
 
         while tries < self.retries:
             try:
-                self.IAItem.modify_metadata(metadata=metadata, target=target,
-                                            priority=priority, debug=debug)
+                iamodifymd(identifier=self.identifier, metadata=metadata,
+                           target=target, append=append, priority=priority,
+                           debug=self.debug)
                 return True
-                break
             except Exception as exception:
-                tries += 1
-                if debug:
-                    print "%s was caught" % (type(exception).__name__)
-                    return False
-                elif tries == self.retries:
+                self.handleException(exception=exception)
+                if tries == self.retries:
                     return False
                 else:
+                    tries += 1
                     time.sleep(60*tries)
+
+    def upload(self, body, metadata={}, headers={}, queuederive=False,
+               verify=True):
+        """
+        This function acts as a wrapper for the uploadFile function, but adds
+        additional functionality to ensure better error handling.
+
+        - body (string or list): The path to the file(s) to upload.
+        - metadata (dict): The metadata for the Internet Archive item.
+        - headers (dict): The headers to send when sending the request.
+        - queuederive (boolean): Whether or not to derive the item after the
+        file is uploaded.
+        - verify (boolean): Whether or not to verify that the file is uploaded.
+
+        Returns: True if process is successful, False if otherwise.
+        """
+        count = 0
+        for dumpfile in body:
+            self.common.giveMessage("Uploading file: %s" % (dumpfile))
+            time.sleep(1)  # For Ctrl+C
+            if count == 0:
+                upload = self.uploadFile(dumpfile, metadata=metadata,
+                                         headers=headers, verify=verify,
+                                         queuederive=queuederive)
+                # Allow the Internet Archive to process the item creation
+                if self.debug:
+                    pass
+                else:
+                    timenow = time.strftime("%Y-%m-%d %H:%M:%S",
+                                            time.localtime())
+                    self.common.giveMessage("Sleeping for 30 seconds, %s" %
+                                            (timenow))
+                    time.sleep(30)
+            else:
+                upload = self.uploadFile(dumpfile, queuederive=queuederive,
+                                         verify=verify)
+
+            if upload:
+                self.common.giveDebugMessage(upload)
+                count += 1
+            else:
+                return False
+        return True
 
 
 if __name__ == '__main__':

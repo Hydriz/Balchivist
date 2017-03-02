@@ -16,61 +16,56 @@
 
 import datetime
 import os
-import socket
-import time
-import urllib
 
 import balchivist
 
 
 class BALMMediacounts(object):
-    def __init__(self, params={}, argparse=False, sqldb=None):
-        """
-        This module is for archiving the statistics on visits to media files
-        provided by the Wikimedia Foundation (available at
-        <https://dumps.wikimedia.org/other/mediacounts/>) to the Internet
-        Archive.
+    """
+    This module is for archiving the statistics on visits to media files
+    provided by the Wikimedia Foundation (available at
+    <https://dumps.wikimedia.org/other/mediacounts/>) to the Internet
+    Archive.
+    """
+    title = "Wikimedia statistics files for media files visits on %s"
+    desc = "This is the Wikimedia statistics files for visits to "
+    desc += "media files on upload.wikimedia.org on %s."
 
-        - argparse (boolean): Whether or not the class was called during the
-        argparse stage.
+    config = balchivist.BALConfig("mediacounts")
+    dbtable = "mediacounts"
+    conv = balchivist.BALConverter()
+    tempdir = config.get('dumpdir')
+    filelist = [
+        "mediacounts.%s.v00.tsv.bz2",
+        "mediacounts.top1000.%s.v00.csv.zip"
+    ]
+
+    jobs = [
+        "archive",
+        "check",
+        "update"
+    ]
+    # A size hint for the Internet Archive, currently set at 100GB
+    sizehint = "107374182400"
+
+    def __init__(self, params={}, sqldb=None):
+        """
+        This function is executed when a new BALMMediacounts instance is
+        initialized.
+
         - params (dict): Information about what is to be done about a given
         item. The "verbose" and "debug" parameters are necessary.
         - sqldb (object): A call to the BALSqlDb class with the required
         parameters.
         """
-        self.title = "Wikimedia statistics files for media files visits on %s"
-        self.desc = "This is the Wikimedia statistics files for visits to "
-        self.desc += "media files on upload.wikimedia.org on %s."
-
-        self.config = balchivist.BALConfig("mediacounts")
         self.sqldb = sqldb
-        self.dbtable = "mediacounts"
-        self.conv = balchivist.BALConverter()
-        self.hostname = socket.gethostname()
-        self.tempdir = self.config.get('dumpdir')
-        self.filelist = [
-            "mediacounts.%s.v00.tsv.bz2",
-            "mediacounts.top1000.%s.v00.csv.zip"
-        ]
-
-        if (argparse):
-            self.verbose = False
-            self.debug = False
-        else:
-            self.verbose = params['verbose']
-            self.debug = params['debug']
-
-        self.jobs = [
-            "archive",
-            "check",
-            "update"
-        ]
-        # A size hint for the Internet Archive, currently set at 100GB
-        self.sizehint = "107374182400"
+        self.verbose = params['verbose']
+        self.debug = params['debug']
         self.common = balchivist.BALCommon(verbose=self.verbose,
                                            debug=self.debug)
 
-    def argparse(self, parser=None):
+    @classmethod
+    def argparse(cls, parser=None):
         """
         This function is used for declaring the valid arguments specific to
         this module and should only be used during the argparse stage.
@@ -82,7 +77,7 @@ class BALMMediacounts(object):
             description="Statistics on visits to media files."
         )
         group.add_argument("--mediacounts-job", action="store",
-                           choices=self.jobs, default="archive",
+                           choices=cls.jobs, default="archive",
                            dest="mediacountsjob", help="The job to execute.")
         group.add_argument("--mediacounts-date", action="store",
                            dest="mediacountsdate",
@@ -100,13 +95,13 @@ class BALMMediacounts(object):
 
         Returns: Dict with the necessary item metadata.
         """
-        datename = self.conv.getDateFromWiki(dumpdate)
-        arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
         try:
             datetime.datetime.strptime(dumpdate, '%Y%m%d')
         except ValueError:
             self.common.giveMessage('The date was given in the wrong format!')
             return False
+        datename = self.conv.getDateFromWiki(dumpdate)
+        arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
 
         metadata = {
             'collection': self.config.get('collection'),
@@ -136,31 +131,6 @@ class BALMMediacounts(object):
             output.append(dumpfile % (arcdate))
         return output
 
-    def downloadFiles(self, dumpdate, filelist):
-        """
-        This function is used for downloading the relevant files for a
-        particular dump.
-
-        - dumpdate (string in %Y%m%d format): The date of the dump to work on.
-        - filelist (list): The list of files to work on.
-
-        Returns: True if successful, False if an error has occured.
-        """
-        fileopener = urllib.URLopener()
-        os.chdir(self.tempdir)
-        for dumpfile in filelist:
-            if (os.path.isfile(dumpfile)):
-                continue
-            else:
-                self.common.giveMessage("Downloading file: %s" % (dumpfile))
-                d = datetime.datetime.strptime(dumpdate, '%Y%m%d')
-                fileurl = "%s/%s/%s" % (self.config.get('baseurl'),
-                                        d.strftime('%Y'), dumpfile)
-                try:
-                    fileopener.retrieve(fileurl, dumpfile)
-                except:
-                    return False
-
     def removeFiles(self, filelist):
         """
         This function is used for removing all the downloaded files for a
@@ -176,35 +146,6 @@ class BALMMediacounts(object):
             try:
                 os.remove(filepath)
             except:
-                return False
-        return True
-
-    def checkDumpDir(self, path, filelist):
-        """
-        This function is used to check if the given dump directory is complete.
-
-        - path (string): The path to the dump directory.
-        - filelist (list): A list of files generated from self.getFiles().
-
-        Returns: True if the dump directory is complete, False if otherwise.
-        """
-        if (os.path.exists(path)):
-            files = os.listdir(path)
-        else:
-            # The dump directory does not exist, something wrong probably
-            # happened along the way.
-            self.common.giveDebugMessage("The dump file directory does not "
-                                         "exist!")
-            return False
-
-        for dumpfile in filelist:
-            if (dumpfile in files):
-                continue
-            else:
-                # The dump files on the local directory is incomplete.
-                # Exit the rest of the function and leave it to another day.
-                self.common.giveDebugMessage("The dump files in the local "
-                                             "directory is incomplete!")
                 return False
         return True
 
@@ -427,86 +368,45 @@ class BALMMediacounts(object):
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds="dumpdate=\"%s\"" % (arcdate))
 
-    def claimItem(self, dumpdate):
-        """
-        This function is used to claim an item from the server.
-
-        - dumpdate (string in %Y%m%d format): The date of the dump to work on.
-
-        Returns: True if update is successful, False if an error occurred.
-        """
-        if (self.debug):
-            return True
-        else:
-            vals = {
-                'claimed_by': '"%s"' % (self.hostname)
-            }
-            arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
-            return self.sqldb.update(dbtable=self.dbtable, values=vals,
-                                     conds="dumpdate=\"%s\"" % (arcdate))
-
-    def archive(self, dumpdate, path=None, verbose=False, debug=False):
+    def archive(self, dumpdate, path=None):
         """
         This function is for doing the actual archiving process.
 
         - dumpdate (string): The dumpdate of the dump in %Y%m%d format.
         - path (string): The path to the dump directory.
-        - verbose (boolean): Whether or not to increase verbosity.
-        - debug (boolean): Whether or not to run in debug mode.
 
         Returns: True if process is successful, False if otherwise.
         """
-        count = 0
         identifier = "mediacounts-%s" % (dumpdate)
         iaitem = balchivist.BALArchiver(identifier)
         allfiles = self.getFiles(dumpdate)
+        md = self.getItemMetadata(dumpdate)
+        headers = {
+            'x-archive-size-hint': self.sizehint
+        }
 
         if (path is None):
             dumps = self.tempdir
-            self.downloadFiles(dumpdate=dumpdate, filelist=allfiles)
+            d = datetime.datetime.strptime(dumpdate, '%Y%m%d')
+            baseurl = "%s/%s" % (self.config.get('baseurl'), d.strftime('%Y'))
+            self.common.downloadFiles(filelist=allfiles, directory=dumps,
+                                      baseurl=baseurl)
         else:
             dumps = path
 
-        if (self.checkDumpDir(path=dumps, filelist=allfiles)):
+        if (self.common.checkDumpDir(path=dumps, filelist=allfiles)):
             pass
         else:
             # The dump directory is not suitable to be used, exit the function
             return False
 
         os.chdir(dumps)
-        for dumpfile in allfiles:
-            self.common.giveMessage("Uploading file: %s" % (dumpfile))
-            time.sleep(1)  # For Ctrl+C
-            if count == 0:
-                metadata = self.getItemMetadata(dumpdate)
-                headers = {
-                    'x-archive-size-hint': self.sizehint
-                }
-                upload = iaitem.uploadFile(dumpfile, metadata=metadata,
-                                           headers=headers, debug=debug)
-                # Allow the Internet Archive to process the item creation
-                if debug:
-                    pass
-                else:
-                    timenow = time.strftime("%Y-%m-%d %H:%M:%S",
-                                            time.localtime())
-                    self.common.giveMessage("Sleeping for 30 seconds, %s" %
-                                            (timenow))
-                    time.sleep(30)
-            else:
-                upload = iaitem.uploadFile(dumpfile, debug=debug)
+        upload = iaitem.upload(body=allfiles, metadata=md, headers=headers)
 
-            if upload:
-                count += 1
-            else:
-                return False
-
-        if (path is None):
+        if (upload and path is None):
             self.removeFiles(allfiles)
         else:
-            pass
-
-        return True
+            return upload
 
     def check(self, dumpdate):
         """
@@ -586,13 +486,21 @@ class BALMMediacounts(object):
         """
         This function is for dispatching an item to the various functions.
         """
-        self.claimItem(dumpdate=date)
+        # Claim the item from the database server if not in debug mode
+        if self.debug:
+            pass
+        else:
+            arcdate = self.conv.getDateFromWiki(date, archivedate=True)
+            itemdetails = {
+                'dumpdate': arcdate
+            }
+            self.sqldb.claimItem(params=itemdetails, dbtable=self.dbtable)
+
         msg = "Running %s on the Wikimedia media files visit " % (job)
         msg += "statistics on %s" % (date)
         self.common.giveMessage(msg)
         if (job == "archive"):
-            status = self.archive(dumpdate=date, path=path,
-                                  verbose=self.verbose, debug=self.debug)
+            status = self.archive(dumpdate=date, path=path)
             if (self.debug):
                 return status
             elif (self.debug is False and status):
