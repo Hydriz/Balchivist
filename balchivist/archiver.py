@@ -41,6 +41,7 @@ class BALArchiver(object):
         self.debug = debug
         self.verbose = verbose
         self.common = common.BALCommon(debug=debug, verbose=verbose)
+
         # Files that are present by default in all Internet Archive items
         self.defaultFiles = [
             '%s_archive.torrent' % (identifier),
