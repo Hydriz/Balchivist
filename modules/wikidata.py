@@ -498,6 +498,7 @@ class BALMWikidata(object):
                 return items
         else:
             items = allfiles
+        return items
 
     def archive(self, database, dumpdate, path=None):
         """

@@ -704,6 +704,7 @@ class BALMDumps(object):
                 items.append(filename)
             else:
                 continue
+        return items
 
     def archive(self, wiki, date, path=None):
         """

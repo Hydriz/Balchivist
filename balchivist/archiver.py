@@ -70,17 +70,16 @@ class BALArchiver(object):
         tries = 0
         while tries < self.retries:
             try:
-                files = internetarchive.get_files(identifier=self.identifier)
+                iaitem = internetarchive.get_item(identifier=self.identifier)
             except Exception as exception:
                 self.handleException(exception=exception)
                 if tries == self.retries:
                     return False
                 else:
                     time.sleep(60*tries)
-
         filelist = []
-        for thefile in files:
-            filename = thefile.name
+        for thefile in iaitem.files:
+            filename = thefile['name']
             if filename in self.defaultFiles:
                 continue
             else:
@@ -123,6 +122,7 @@ class BALArchiver(object):
                 if tries == self.retries:
                     return False
                 else:
+                    tries += 1
                     time.sleep(60*tries)
 
     def modifyMetadata(self, metadata, target='metadata', append=False,
@@ -156,6 +156,7 @@ class BALArchiver(object):
                 if tries == self.retries:
                     return False
                 else:
+                    tries += 1
                     time.sleep(60*tries)
 
     def upload(self, body, metadata={}, headers={}, queuederive=False,

@@ -180,12 +180,13 @@ class BALCommon(object):
             if (os.path.isfile(thefile)):
                 continue
             else:
-                self.common.giveMessage("Downloading file: %s" % (thefile))
+                self.giveMessage("Downloading file: %s" % (thefile))
                 fileurl = "%s/%s" % (baseurl, thefile)
                 try:
                     fileopener.retrieve(fileurl, thefile)
                 except:
                     return False
+        return True
 
 
 if __name__ == "__main__":
