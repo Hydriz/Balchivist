@@ -601,7 +601,7 @@ class BALMDumps(object):
         cannotarc = self.getStoredDumps(db, progress="done", can_archive=0)
         for dump in cannotarc:
             dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            allfiles = self.getDumpFiles(wiki, date)
+            allfiles = self.getDumpFiles(db, dump)
             if (self.common.checkDumpDir(dumpdir, allfiles)):
                 # The dump is now suitable to be archived
                 self.common.giveMessage("Updating can_archive for %s "
@@ -651,7 +651,7 @@ class BALMDumps(object):
         canarc = self.getStoredDumps(db, can_archive=1)
         for dump in canarc:
             dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            allfiles = self.getDumpFiles(wiki, date)
+            allfiles = self.getDumpFiles(db, dump)
             if (self.common.checkDumpDir(dumpdir, allfiles)):
                 continue
             else:

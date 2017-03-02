@@ -223,6 +223,7 @@ class BALConverter(object):
         output = wikidb
         langname = 'English'
         project = 'Wikimedia'
+        conv = BALConverter()
         if wikidb in cls.specialnames:
             output = cls.specialnames[wikidb]
         elif wikidb.startswith('wikimania') and wikidb != 'wikimaniateamwiki':
@@ -239,7 +240,7 @@ class BALConverter(object):
                 pass
         elif wikidb.endswith('wiki'):
             code = wikidb.replace('wiki', '').replace('_', '-')
-            langname = cls.getLangName(code)
+            langname = conv.getLangName(code)
             project = "Wikipedia"
             if langname:
                 if pretext:
@@ -253,7 +254,7 @@ class BALConverter(object):
             for suffix in cls.dbsuffixes:
                 if suffix in wikidb:
                     code = wikidb.replace(suffix, '').replace('_', '-')
-                    langname = cls.getLangName(code)
+                    langname = conv.getLangName(code)
                     project = suffix.title()
                     if langname:
                         if pretext:
