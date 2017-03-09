@@ -378,7 +378,8 @@ class BALMMediacounts(object):
         Returns: True if process is successful, False if otherwise.
         """
         identifier = "mediacounts-%s" % (dumpdate)
-        iaitem = balchivist.BALArchiver(identifier)
+        iaitem = balchivist.BALArchiver(identifier=identifier,
+                                        verbose=self.verbose, debug=self.debug)
         allfiles = self.getFiles(dumpdate)
         md = self.getItemMetadata(dumpdate)
         headers = {
@@ -419,7 +420,8 @@ class BALMMediacounts(object):
         complete = True
         allfiles = self.getFiles(dumpdate)
         identifier = "mediacounts-%s" % (dumpdate)
-        iaitem = balchivist.BALArchiver(identifier)
+        iaitem = balchivist.BALArchiver(identifier=identifier,
+                                        verbose=self.verbose, debug=self.debug)
         iafiles = iaitem.getFileList()
         self.common.giveMessage("Checking if all files are uploaded for the "
                                 "%s dump" % (dumpdate))

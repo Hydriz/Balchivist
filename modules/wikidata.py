@@ -484,7 +484,8 @@ class BALMWikidata(object):
         Returns: List of files to upload.
         """
         identifier = "wikibase-%s-%s" % (database, dumpdate)
-        iaitem = balchivist.BALArchiver(identifier)
+        iaitem = balchivist.BALArchiver(identifier=identifier,
+                                        verbose=self.verbose, debug=self.debug)
         allfiles = self.getFiles(database, dumpdate)
         if self.resume:
             items = []
@@ -513,7 +514,8 @@ class BALMWikidata(object):
         Returns: True if process is successful, False if otherwise.
         """
         identifier = "wikibase-%s-%s" % (database, dumpdate)
-        iaitem = balchivist.BALArchiver(identifier)
+        iaitem = balchivist.BALArchiver(identifier=identifier,
+                                        verbose=self.verbose, debug=self.debug)
         md = self.getItemMetadata(database, dumpdate)
         items = self.getFilesToUpload(database, dumpdate)
         headers = {
@@ -559,7 +561,8 @@ class BALMWikidata(object):
         complete = True
         allfiles = self.getFiles(database, dumpdate)
         identifier = "wikibase-%s-%s" % (database, dumpdate)
-        iaitem = balchivist.BALArchiver(identifier)
+        iaitem = balchivist.BALArchiver(identifier=identifier,
+                                        verbose=self.verbose, debug=self.debug)
         iafiles = iaitem.getFileList()
         self.common.giveMessage("Checking if all files are uploaded for %s "
                                 "on %s" % (database, dumpdate))
