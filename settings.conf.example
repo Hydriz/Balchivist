@@ -12,7 +12,25 @@ defaults_file = ~/.my.cnf
 logfile = output.log
 
 # The modules to be made available to Balchivist (those in the modules directory without the ".py" extension)
-modules = ["dumps", "mediacounts", "wikidata"]
+modules = ["cirrussearch", "dumps", "mediacounts", "translation", "wikidata"]
+
+[cirrussearch]
+# The base directory for all the CirrusSearch dumps (no trailing slash)
+# This directory should be the one that contains all the dump dates
+# Mirrors can be used as well, provided that the relevant data exists
+baseurl = https://dumps.wikimedia.org/other/cirrussearch
+
+# The directory to store the CirrusSearch dump files temporarily
+dumpdir = /data/project/temp
+
+# The following are for the metadata of the Internet Archive item
+collection = wikimediadownloads
+creator = Wikimedia projects editors
+contributor = Wikimedia Foundation
+mediatype = web
+rights = Permission is granted under the Wikimedia Foundation's <a href="https://wikimediafoundation.org/wiki/Terms_of_Use">Terms of Use</a>. There are also additional <a href="https://archive.org/download/wikimediadownloads/legal.html">copyrights information available</a>
+licenseurl = http://creativecommons.org/licenses/by-sa/3.0/
+subject = wiki;cirrussearch;elasticsearch;search;dumps;wikimedia
 
 [dumps]
 # The directory containing the dump files in the format:
@@ -50,6 +68,24 @@ mediatype = web
 subject = wiki;dumps;data dumps;mediacounts;analytics
 rights = Permission is granted under the Wikimedia Foundation's <a href="https://wikimediafoundation.org/wiki/Terms_of_Use">Terms of Use</a>. There are also additional <a href="https://archive.org/download/wikimediadownloads/legal.html">copyrights information available</a>
 licenseurl = https://creativecommons.org/publicdomain/zero/1.0/
+
+[translation]
+# The base directory for all the Content Translation dumps (no trailing slash)
+# This directory should be the one that contains the all the dump date
+# Mirrors can be used as well, provided that the relevant data exists
+baseurl = https://dumps.wikimedia.org/other/contenttranslation
+
+# The directory to store the Content Translation dump files temporarily
+dumpdir = /data/project/temp
+
+# The following are for the metadata of the Internet Archive item
+collection = wikimediadownloads
+creator = Wikimedia projects editors
+contributor = Wikimedia Foundation
+mediatype = web
+subject = wiki;dumps;data dumps;contenttranslation;translation;parallel corpora
+rights = Permission is granted under the Wikimedia Foundation's <a href="https://wikimediafoundation.org/wiki/Terms_of_Use">Terms of Use</a>. There are also additional <a href="https://archive.org/download/wikimediadownloads/legal.html">copyrights information available</a>
+licenseurl = http://creativecommons.org/licenses/by-sa/3.0/
 
 [wikidata]
 # The base directory for all Wikibase dumps (no trailing slash)

@@ -15,6 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA, or visit
 # <http://www.gnu.org/copyleft/gpl.html>
 
+from cirrussearch import BALMCirrussearch
 from dumps import BALMDumps
 from mediacounts import BALMMediacounts
+from translation import BALMTranslation
 from wikidata import BALMWikidata
