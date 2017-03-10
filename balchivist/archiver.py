@@ -72,11 +72,13 @@ class BALArchiver(object):
         while tries < self.retries:
             try:
                 iaitem = internetarchive.get_item(identifier=self.identifier)
+                break
             except Exception as exception:
                 self.handleException(exception=exception)
                 if tries == self.retries:
                     return False
                 else:
+                    tries += 1
                     time.sleep(60*tries)
         filelist = []
         for thefile in iaitem.files:
