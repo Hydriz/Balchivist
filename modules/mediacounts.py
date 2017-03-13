@@ -406,6 +406,7 @@ class BALMMediacounts(object):
 
         if (upload and path is None):
             self.removeFiles(allfiles)
+            return True
         else:
             return upload
 

@@ -546,6 +546,7 @@ class BALMWikidata(object):
 
         if (upload and path is None):
             shutil.rmtree(dumps)
+            return True
         else:
             return upload
 
