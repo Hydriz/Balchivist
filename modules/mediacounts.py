@@ -36,7 +36,9 @@ class BALMMediacounts(object):
     conv = balchivist.BALConverter()
     tempdir = config.get('dumpdir')
     filelist = [
-        "mediacounts.%s.v00.tsv.bz2",
+        "mediacounts.%s.v00.tsv.bz2"
+    ]
+    extrafilelist = [
         "mediacounts.top1000.%s.v00.csv.zip"
     ]
 
@@ -126,9 +128,19 @@ class BALMMediacounts(object):
         Returns list of all files.
         """
         arcdate = self.conv.getDateFromWiki(dumpdate, archivedate=True)
+        d = datetime.datetime.strptime(dumpdate, '%Y%m%d')
         output = []
         for dumpfile in self.filelist:
             output.append(dumpfile % (arcdate))
+        for dumpfile in self.extrafilelist:
+            thefile = dumpfile % (arcdate)
+            fileurl = "%s/%s/%s" % (self.config.get('baseurl'),
+                                    d.strftime('%Y'), thefile)
+            if self.common.checkDownloadFileExistence(fileurl):
+                output.append(dumpfile)
+            else:
+                # File does not exist in the extra file list, continue
+                continue
         return output
 
     def removeFiles(self, filelist):

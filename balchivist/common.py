@@ -188,6 +188,23 @@ class BALCommon(object):
                     return False
         return True
 
+    def checkDownloadFileExistence(self, fileurl):
+        """
+        This function is used for checking if a resource exists in the given
+        file URL. This is useful for checking whether the system should
+        download a file when the existence is not guaranteed.
+
+        - fileurl (string): The URL to the file to check.
+
+        Returns: True if a resource exists in the given URL, False if
+        otherwise.
+        """
+        thefile = urllib.urlopen(fileurl)
+        if (thefile.getcode() == 200):
+            return True
+        else:
+            return False
+
 
 if __name__ == "__main__":
     BALMessage = message.BALMessage()
