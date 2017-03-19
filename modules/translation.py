@@ -16,6 +16,7 @@
 
 import datetime
 import os
+import shutil
 
 import balchivist
 
@@ -156,24 +157,6 @@ class BALMTranslation(object):
         else:
             items = allfiles
         return items
-
-    def removeFiles(self, filelist):
-        """
-        This function is used for removing all the downloaded files for a
-        particular dump.
-
-        - filelist (list): The list of dump files.
-
-        Returns: True if the operation is successful, False if an error has
-        occured.
-        """
-        for dumpfile in filelist:
-            filepath = "%s/%s" % (self.tempdir, dumpfile)
-            try:
-                os.remove(filepath)
-            except:
-                return False
-        return True
 
     def getAllDumps(self):
         """
@@ -479,7 +462,7 @@ class BALMTranslation(object):
         }
 
         if (path is None):
-            dumps = self.tempdir
+            dumps = "%s/%s" % (self.tempdir, dumpdate)
             baseurl = "%s/%s" % (self.config.get('baseurl'), dumpdate)
             self.common.downloadFiles(filelist=allfiles, directory=dumps,
                                       baseurl=baseurl)
@@ -496,7 +479,7 @@ class BALMTranslation(object):
         upload = iaitem.upload(body=allfiles, metadata=md, headers=headers)
 
         if (upload and path is None):
-            self.removeFiles(allfiles)
+            shutil.rmtree(dumps)
             return True
         else:
             return upload
