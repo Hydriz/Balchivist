@@ -49,6 +49,7 @@ class BALMDumps(object):
     # Additional files in each dump
     additional = [
         'dumpruninfo.txt',
+        'dumpstatus.json',
         'status.html'
     ]
     checksums = [
