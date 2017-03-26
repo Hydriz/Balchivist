@@ -185,6 +185,8 @@ class BALCommon(object):
                 try:
                     fileopener.retrieve(fileurl, thefile)
                 except:
+                    # Remove the last file as it may be corrupted
+                    os.remove(thefile)
                     return False
         return True
 
