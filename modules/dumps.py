@@ -49,7 +49,6 @@ class BALMDumps(object):
     # Additional files in each dump
     additional = [
         'dumpruninfo.txt',
-        'dumpstatus.json',
         'status.html'
     ]
     checksums = [
@@ -720,6 +719,13 @@ class BALMDumps(object):
             'x-archive-size-hint': self.sizehint
         }
         allfiles = self.getDumpFiles(wiki, date)
+
+        # New JSON file with status of the dump, see Wikimedia's T147177
+        # This should be removed in the future!
+        if (date > 20170319):
+            allfiles.append('dumpstatus.json')
+        else:
+            pass
 
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
