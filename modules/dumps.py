@@ -380,18 +380,19 @@ class BALMDumps(object):
 
         return output
 
-    def updateCanArchive(self, params):
+    def updateCanArchive(self, params, can_archive):
         """
         This function is used to update the status of whether a dump can be
         archived.
 
-        - params (dict): Information about the item with the keys "wiki",
-        "date" and "can_archive".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
+        - can_archive (int): The new can_archive status to update to.
 
         Returns: True if update is successful, False if an error occurred.
         """
         vals = {
-            'can_archive': '"%s"' % (params['can_archive'])
+            'can_archive': '"%s"' % (can_archive)
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.sqldb.getConds(params=params))
@@ -400,8 +401,8 @@ class BALMDumps(object):
         """
         This function is used to mark an item as archived after doing so.
 
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
 
         Returns: True if update is successful, False if an error occurred.
         """
@@ -416,8 +417,8 @@ class BALMDumps(object):
         """
         This function is used to mark an item as checked after doing so.
 
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
 
         Returns: True if update is successful, False if an error occurred.
         """
@@ -432,8 +433,8 @@ class BALMDumps(object):
         """
         This function is used to mark an item as failed when archiving it.
 
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
 
         Returns: True if update is successful, False if an error occurred.
         """
@@ -448,8 +449,8 @@ class BALMDumps(object):
         """
         This function is used to mark an item as failed when checking it.
 
-        - params (dict): Information about the item with the keys "wiki"
-        and "date".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
 
         Returns: True if update is successful, False if an error occurred.
         """
@@ -460,17 +461,18 @@ class BALMDumps(object):
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.sqldb.getConds(params=params))
 
-    def updateProgress(self, params):
+    def updateProgress(self, params, progress):
         """
         This function is used to update the progress of a dump.
 
-        - params (dict): Information about the item with the keys "wiki",
-        "date" and "progress".
+        - params (dict): Information about the item with the keys "wiki" and
+        "dumpdate".
+        - progress (string): The new dump progress to update to.
 
         Returns: True if update is successful, False if an error occurred.
         """
         vals = {
-            'progress': '"%s"' % (params['progress'])
+            'progress': '"%s"' % (progress)
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.sqldb.getConds(params=params))
@@ -584,10 +586,9 @@ class BALMDumps(object):
                 params = {
                     'wiki': db,
                     'dumpdate': self.conv.getDateFromWiki(dump,
-                                                          archivedate=True),
-                    'progress': progress
+                                                          archivedate=True)
                 }
-                self.updateProgress(params=params)
+                self.updateProgress(params=params, progress=progress)
             else:
                 continue
 
@@ -610,10 +611,9 @@ class BALMDumps(object):
                 params = {
                     'wiki': db,
                     'dumpdate': self.conv.getDateFromWiki(dump,
-                                                          archivedate=True),
-                    'can_archive': 1
+                                                          archivedate=True)
                 }
-                self.updateCanArchive(params=params)
+                self.updateCanArchive(params=params, can_archive=1)
             else:
                 continue
 
@@ -634,10 +634,9 @@ class BALMDumps(object):
                 params = {
                     'wiki': db,
                     'dumpdate': self.conv.getDateFromWiki(dump,
-                                                          archivedate=True),
-                    'progress': progress
+                                                          archivedate=True)
                 }
-                self.updateProgress(params=params)
+                self.updateProgress(params=params, progress=progress)
             else:
                 continue
 
@@ -662,10 +661,9 @@ class BALMDumps(object):
                 params = {
                     'wiki': db,
                     'dumpdate': self.conv.getDateFromWiki(dump,
-                                                          archivedate=True),
-                    'can_archive': 0
+                                                          archivedate=True)
                 }
-                self.updateCanArchive(params=params)
+                self.updateCanArchive(params=params, can_archive=0)
 
     def getFilesToUpload(self, wiki, dumpdate, path=None):
         """
