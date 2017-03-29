@@ -243,7 +243,7 @@ class BALMDumps(object):
 
         # New JSON file with status of the dump, see Wikimedia's T147177
         # This should be removed in the future!
-        if (date > datetime.datetime.strptime("20170319", '%Y%m%d')):
+        if (int(date) > 20170319):
             dumpfiles.append('dumpstatus.json')
         else:
             pass
