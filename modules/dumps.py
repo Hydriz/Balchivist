@@ -240,6 +240,14 @@ class BALMDumps(object):
         m = re.compile(regex).finditer(raw)
         for i in m:
             dumpfiles.append(i.group('dumpfile'))
+
+        # New JSON file with status of the dump, see Wikimedia's T147177
+        # This should be removed in the future!
+        if (date > datetime.datetime.strptime("20170319", '%Y%m%d')):
+            dumpfiles.append('dumpstatus.json')
+        else:
+            pass
+
         return sorted(dumpfiles + self.additional)
 
     def getAllDumps(self, wiki):
@@ -719,13 +727,6 @@ class BALMDumps(object):
             'x-archive-size-hint': self.sizehint
         }
         allfiles = self.getDumpFiles(wiki, date)
-
-        # New JSON file with status of the dump, see Wikimedia's T147177
-        # This should be removed in the future!
-        if (date > 20170319):
-            allfiles.append('dumpstatus.json')
-        else:
-            pass
 
         if (path is None):
             dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
