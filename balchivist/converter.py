@@ -105,7 +105,8 @@ class BALConverter(object):
         "tr": "Wikimedia Turkey",
         "ua": "Wikimedia Ukraine",
         "uk": "Wikimedia UK",
-        "ve": "Wikimedia Venezuela"
+        "ve": "Wikimedia Venezuela",
+        "wb": "Wikimedia West Bengal"
     }
 
     def getLanguageList(self):
