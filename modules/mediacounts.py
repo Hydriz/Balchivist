@@ -137,7 +137,7 @@ class BALMMediacounts(object):
             fileurl = "%s/%s/%s" % (self.config.get('baseurl'),
                                     d.strftime('%Y'), thefile)
             if self.common.checkDownloadFileExistence(fileurl):
-                output.append(dumpfile)
+                output.append(thefile)
             else:
                 # File does not exist in the extra file list, continue
                 continue
