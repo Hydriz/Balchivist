@@ -99,6 +99,7 @@ class BALConverter(object):
         "nz": "Wikimedia New Zealand",
         "pa-us": "Wikimedia Pennsylvania",  # Unofficial
         "pl": "Wikimedia Poland",
+        "pt": "Wikimedia Portugal",
         "rs": "Wikimedia Serbia",
         "ru": "Wikimedia Russia",
         "se": "Wikimedia Sweden",
@@ -204,6 +205,20 @@ class BALConverter(object):
             return d.strftime('%Y-%m-%d')
         else:
             return d.strftime('%B %d, %Y')
+
+    @staticmethod
+    def getMonthName(date):
+        """
+        This function converts the date in the format %Y-%m (e.g. 2017-03) into
+        the %B %Y format.
+
+        - date (string): The date in the format %Y-%m.
+
+        Returns: String with the date in the %B %Y format.
+        """
+        # If the date is in the wrong format, an exception will be thrown
+        d = datetime.datetime.strptime(date, '%Y-%m')
+        return d.strftime('%B %Y')
 
     @classmethod
     def getNameFromDB(cls, wikidb, format='default', pretext=False):
