@@ -109,7 +109,15 @@ class BALMWikidata(object):
         Returns list of all dump dates (in %Y%m%d format).
         """
         url = "%s/%s/" % (self.config.get('baseurl'), database)
-        return self.common.extractLinks(url)
+        links = self.common.extractLinks(url)
+        dumps = []
+        for link in links:
+            if (len(link) == 8):
+                # Make sure the link is a date (by checking the length)
+                dumps.append(link)
+            else:
+                continue
+        return dumps
 
     def getFiles(self, database, dumpdate):
         """
@@ -292,18 +300,19 @@ class BALMWikidata(object):
 
         return output
 
-    def updateCanArchive(self, params):
+    def updateCanArchive(self, params, can_archive):
         """
         This function is used to update the status of whether a dump can be
         archived.
 
         - params (dict): Information about the item with the keys "wiki",
         "dumpdate" and "can_archive".
+        - can_archive (int): Whether or not the item can be archived.
 
         Returns: True if update is successful, False if an error occurred.
         """
         vals = {
-            'can_archive': '"%s"' % (params['can_archive'])
+            'can_archive': '"%s"' % (can_archive)
         }
         return self.sqldb.update(dbtable=self.dbtable, values=vals,
                                  conds=self.sqldb.getConds(params=params))
@@ -443,10 +452,9 @@ class BALMWikidata(object):
                                         "on %s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'dumpdate': dump,
-                    'can_archive': 1
+                    'dumpdate': dump
                 }
-                self.updateCanArchive(params=params)
+                self.updateCanArchive(params=params, can_archive=1)
             else:
                 continue
 
@@ -468,10 +476,9 @@ class BALMWikidata(object):
                                         "%s" % (db, dump))
                 params = {
                     'wiki': db,
-                    'dumpdate': dump,
-                    'can_archive': 0
+                    'dumpdate': dump
                 }
-                self.updateCanArchive(params=params)
+                self.updateCanArchive(params=params, can_archive=0)
 
     def getFilesToUpload(self, database, dumpdate):
         """
