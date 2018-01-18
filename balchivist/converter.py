@@ -80,6 +80,7 @@ class BALConverter(object):
 
     # The names of the chapter wikis (wikis that end with "wikimedia")
     countrycode = {
+        "am": "Wikimedia Armenia",
         "ar": "Wikimedia Argentina",
         "bd": "Wikimedia Bangladesh",
         "be": "Wikimedia Belgium",
@@ -91,6 +92,7 @@ class BALConverter(object):
         "et": "Wikimedia Estonia",
         "fi": "Wikimedia Finland",
         "il": "Wikimedia Israel",
+        "mai": "Maithili Wikimedians",
         "mk": "Wikimedia Macedonia",
         "mx": "Wikimedia Mexico",
         "nl": "Wikimedia Netherlands",
