@@ -48,11 +48,18 @@ class BALMDumps(object):
     ]
     # Additional files in each dump
     additional = [
+        'dumpruninfo.json',
         'dumpruninfo.txt',
+        'dumpstatus.json',
+        'dumpspecialfiles.json',
+        'index.html',
+        'report.json',
         'status.html'
     ]
     checksums = [
+        'md5sums.json',
         'md5sums.txt',
+        'sha1sums.json',
         'sha1sums.txt'
     ]
 
