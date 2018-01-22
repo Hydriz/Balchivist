@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import json
 import os
 import re
 import time
@@ -139,6 +140,33 @@ class BALMDumps(object):
         }
         return metadata
 
+    def getDumpJson(self, wiki, date, report="dumpruninfo"):
+        """
+        This function is used to get the contents of the JSON status file of
+        the dump given the report.
+
+        - wiki (string): The wiki database to check.
+        - date (string): The date of the dump in %Y%m%d format.
+        - report (string): The type of report to retrieve. Available options
+        are "dumpruninfo", "dumpstatus" and "report". Basically, ".json" will
+        be appended to the given report and retrieved from the upstream server.
+
+        Returns: Dict with contents of the given report type or False if an
+        error occurred.
+        """
+        if report in ["dumpruninfo", "dumpstatus", "report"]:
+            report = report + ".json"
+        else:
+            self.common.giveDebugMessage("An unsupported report was given to "
+                                         "getDumpJson in the dumps module!")
+            return False
+        reporturl = "%s/%s/%s/%s" % (self.config.get('dumps'), wiki, date,
+                                     report)
+        f = urllib.urlopen(reporturl)
+        raw = f.read()
+        f.close()
+        return json.loads(raw)
+
     def getDumpProgress(self, wiki, date):
         """
         This function is used to get the progress of a dump.
@@ -157,18 +185,12 @@ class BALMDumps(object):
         output = "unknown"
         progress = 0
         done = 0
-        statusurl = "%s/%s/%s/dumpruninfo.txt" % (self.config.get('dumps'),
-                                                  wiki, date)
-        f = urllib.urlopen(statusurl)
-        raw = f.read()
-        f.close()
-
-        regex = r'name:[^;]+; status:(?P<status>[^;]+); updated:'
-        m = re.compile(regex).finditer(raw)
-        for i in m:
-            status = i.group('status')
+        report = self.getDumpJson(wiki, date, "dumpruninfo")["jobs"]
+        for job in report:
+            status = report[job]["status"]
             if (status == "failed"):
                 output = "error"
+                # The dump has 1 failed file, forget about archiving this dump
                 return output
             elif (status == "in-progress" or status == "waiting"):
                 progress += 1
@@ -176,9 +198,10 @@ class BALMDumps(object):
                 done += 1
             else:
                 # Return output in case a new status appears.
-                # We do not want to corrupt our database with false entries
+                # We do not want to corrupt our database with false entries.
                 output = "unknown"
                 return output
+
         if (progress > 0):
             output = "progress"
         elif (progress == 0 and done > 0):
@@ -234,27 +257,17 @@ class BALMDumps(object):
         - wiki (string): The wiki database to get a list of files for.
         - date (string): The date of the dump in %Y%m%d format.
 
-        Returns: List of files.
+        Returns: List of files, or False if an error has occurred.
         """
         dumpfiles = []
-        url = "%s/%s/%s/index.html" % (self.config.get('dumps'), wiki, date)
-        f = urllib.urlopen(url)
-        raw = f.read()
-        f.close()
-
-        regex = r'<li class=\'file\'><a href="/%s/%s/(?P<dumpfile>[^>]+)">' % (
-                wiki, date)
-        m = re.compile(regex).finditer(raw)
-        for i in m:
-            dumpfiles.append(i.group('dumpfile'))
-
-        # New JSON file with status of the dump, see Wikimedia's T147177
-        # This should be removed in the future!
-        if (int(date) > 20170319):
-            dumpfiles.append('dumpstatus.json')
-        else:
-            pass
-
+        report = self.getDumpJson(wiki, date, report="dumpstatus")["jobs"]
+        for job in report:
+            try:
+                dumpfiles += report[job]["files"]
+            except KeyError:
+                # This happens when the dump that we are working on is
+                # incomplete, which should not be the case
+                return False
         return sorted(dumpfiles + self.additional)
 
     def getAllDumps(self, wiki):
