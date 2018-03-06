@@ -41,8 +41,8 @@ dumpdir = /public/dumps/public
 dumps = https://dumps.wikimedia.org
 
 # The URLs to the respective database lists
-alldblist = https://noc.wikimedia.org/conf/all.dblist
-privatedblist = https://noc.wikimedia.org/conf/private.dblist
+alldblist = https://noc.wikimedia.org/conf/dblists/all.dblist
+privatedblist = https://noc.wikimedia.org/conf/dblists/private.dblist
 
 # The following are for the metadata of the Internet Archive item
 collection = wikimediadownloads
