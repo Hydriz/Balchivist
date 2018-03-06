@@ -276,6 +276,24 @@ class BALMDumps(object):
                     return False
         return sorted(dumpfiles + self.additional)
 
+    def checkDumpExists(self, wiki, date):
+        """
+        This function is used to check if the given dump still exists on the
+        dumps server or has been deleted.
+
+        - wiki (string): The wiki database to get a list of files for.
+        - date (string): The date of the dump in %Y%m%d format.
+
+        Returns: True if the dump still exists, False if otherwise.
+        """
+        dumpurl = "%s/%s/%s/dumpstatus.json" % (self.config.get('dumps'), wiki,
+                                                date)
+        f = urllib.urlopen(dumpurl)
+        if f.getcode() == 200:
+            return True
+        else:
+            return False
+
     def getAllDumps(self, wiki):
         """
         This function is used to get all dumps in a directory from the dumps
@@ -635,6 +653,9 @@ class BALMDumps(object):
         """
         cannotarc = self.getStoredDumps(db, progress="done", can_archive=0)
         for dump in cannotarc:
+            if not self.checkDumpExists(db, dump):
+                continue
+
             dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
             allfiles = self.getDumpFiles(db, dump)
             if (self.common.checkDumpDir(dumpdir, allfiles)):
@@ -660,6 +681,9 @@ class BALMDumps(object):
         """
         failed = self.getStoredDumps(db, progress="error")
         for dump in failed:
+            if not self.checkDumpExists(db, dump):
+                continue
+
             progress = self.getDumpProgress(db, dump)
             if (progress != 'error' and progress != 'unknown'):
                 self.common.giveMessage("Updating dump progress for %s "
