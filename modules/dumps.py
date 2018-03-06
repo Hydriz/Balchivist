@@ -111,6 +111,7 @@ class BALMDumps(object):
         This function is used for obtaining the metadata for the item on the
         Internet Archive.
 
+        - wiki (string): The wiki database to check.
         - dumpdate (string in %Y%m%d format): The date of the dump to work on.
 
         Returns: Dict with the necessary item metadata.
@@ -265,9 +266,14 @@ class BALMDumps(object):
             try:
                 dumpfiles += report[job]["files"]
             except KeyError:
-                # This happens when the dump that we are working on is
-                # incomplete, which should not be the case
-                return False
+                if (report[job]["status"] == "skipped"):
+                    # Continue since the job is skipped and does not affect
+                    # our overall process
+                    continue
+                else:
+                    # This happens when the dump that we are working on is
+                    # incomplete, which should not be the case
+                    return False
         return sorted(dumpfiles + self.additional)
 
     def getAllDumps(self, wiki):
