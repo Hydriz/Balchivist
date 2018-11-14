@@ -59,6 +59,7 @@ class BALConverter(object):
         "donatewiki": "Donate Wiki",
         "fdcwiki": "Wikimedia FDC",
         "foundationwiki": "Wikimedia Foundation wiki",
+        "fixcopyrightwiki": "Fix copyright wiki",
         "incubatorwiki": "Wikimedia Incubator",
         "loginwiki": "Wikimedia Login wiki",
         "mediawikiwiki": "MediaWiki.org",
@@ -91,6 +92,8 @@ class BALConverter(object):
         "dk": "Wikimedia Denmark",
         "et": "Wikimedia Estonia",
         "fi": "Wikimedia Finland",
+        "hi": "Hindi Wikimedians User Group",
+        "id": "Wikimedia Indonesia",
         "il": "Wikimedia Israel",
         "mai": "Maithili Wikimedians",
         "mk": "Wikimedia Macedonia",
@@ -102,6 +105,8 @@ class BALConverter(object):
         "pa-us": "Wikimedia Pennsylvania",  # Unofficial
         "pl": "Wikimedia Poland",
         "pt": "Wikimedia Portugal",
+        "punjabi": "Punjabi Wikimedians User Group", # Unofficial
+        "romd": "Wikimedians of Romania and Moldova User Group", # Unofficial
         "rs": "Wikimedia Serbia",
         "ru": "Wikimedia Russia",
         "se": "Wikimedia Sweden",

@@ -89,6 +89,30 @@ class BALArchiver(object):
                 filelist.append(filename)
         return sorted(filelist)
 
+    def getMd5Sums(self, dumpfile):
+        """
+        This function will get the md5sums for a given file in the item on the
+        Internet Archive.
+
+        - dumpfile (string): The name of the file to get the md5sums for.
+
+        Returns: String with the md5sums.
+        """
+        tries = 0
+        while tries < self.retries:
+            try:
+                iaitem = internetarchive.get_item(identifier=self.identifier)
+                break
+            except Exception as exception:
+                self.handleException(exception=exception)
+                if tries == self.retries:
+                    return False
+                else:
+                    tries += 1
+                    time.sleep(60*tries)
+        thefile = iaitem.get_files(dumpfile)
+        return thefile.md5
+
     def uploadFile(self, body, metadata={}, headers={}, queuederive=False,
                    verify=True):
         """

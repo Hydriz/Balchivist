@@ -69,6 +69,23 @@ subject = wiki;dumps;data dumps;mediacounts;analytics
 rights = Permission is granted under the Wikimedia Foundation's <a href="https://wikimediafoundation.org/wiki/Terms_of_Use">Terms of Use</a>. There are also additional <a href="https://archive.org/download/wikimediadownloads/legal.html">copyrights information available</a>
 licenseurl = https://creativecommons.org/publicdomain/zero/1.0/
 
+[pageviews]
+# The base directory for all the hourly page views statistics dumps (no trailing slash)
+# This directory should be the one that contains the years
+# Mirrors can be used as well, provided that the relevant data exists
+baseurl = https://dumps.wikimedia.org/other/pageviews
+
+# The directory that contains all the dumps and is the one that contains the years
+dumpdir = /public/dumps/pageviews
+
+# The following are for the metadata of the Internet Archive item
+collection = wikimedia-other
+contributor = Wikimedia Foundation
+mediatype = web
+subject = data;analysis;statistics;user behavior;wikimedia;pageviews;wiki;dumps;data dumps
+rights = Permission is granted under the Wikimedia Foundation's <a href="https://wikimediafoundation.org/wiki/Terms_of_Use">Terms of Use</a>. There are also additional <a href="https://archive.org/download/wikimediadownloads/legal.html">copyrights information available</a>
+licenseurl = https://creativecommons.org/publicdomain/zero/1.0/
+
 [translation]
 # The base directory for all the Content Translation dumps (no trailing slash)
 # This directory should be the one that contains the all the dump date

@@ -141,6 +141,29 @@ class BALMDumps(object):
         }
         return metadata
 
+    def getMd5Sums(self, wiki, dumpdate):
+        """
+        This function is used for obtaining a list of files and the
+        corresponding md5sums for those files.
+
+        - wiki (string): The wiki database to check.
+        - dumpdate (string in %Y%m%d format): The date of the dump.
+
+        Returns: Dict with the files and their respective md5sums.
+        """
+        output = dict()
+        report = self.getDumpJson(wiki, dumpdate, report="dumpstatus")["jobs"]
+        for job in report:
+            try:
+                dumpfiles = report[job]["files"]
+                for thefile in dumpfiles:
+                    output[thefile] = dumpfiles[thefile]["md5"]
+            except KeyError:
+                # This happens when the dump that we are working on is
+                # incomplete, which should not be the case
+                return False
+        return output
+
     def getDumpJson(self, wiki, date, report="dumpruninfo"):
         """
         This function is used to get the contents of the JSON status file of
