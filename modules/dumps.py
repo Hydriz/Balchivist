@@ -186,15 +186,15 @@ class BALMDumps(object):
             return False
         reporturl = "%s/%s/%s/%s" % (self.config.get('dumps'), wiki, date,
                                      report)
-        try:
-            f = urllib.urlopen(reporturl)
-        except IOError:
-            self.common.giveDebugMessage("The requested report was not found.")
-            return False
+        f = urllib.urlopen(reporturl)
 
         raw = f.read()
         f.close()
-        return json.loads(raw)
+        try:
+            return json.loads(raw)
+        except ValueError:
+            self.common.giveDebugMessage("The report is not in JSON format")
+            return False
 
     def getDumpProgress(self, wiki, date):
         """
