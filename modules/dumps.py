@@ -152,7 +152,14 @@ class BALMDumps(object):
         Returns: Dict with the files and their respective md5sums.
         """
         output = dict()
-        report = self.getDumpJson(wiki, dumpdate, report="dumpstatus")["jobs"]
+
+        try:
+            report = self.getDumpJson(wiki, dumpdate,
+                                      report="dumpstatus")["jobs"]
+        except TypeError:
+            # self.getDumpJson returned a boolean, likely due to missing report
+            return False
+
         for job in report:
             try:
                 dumpfiles = report[job]["files"]
@@ -211,16 +218,20 @@ class BALMDumps(object):
         - "unknown": Unknown status. It is likely that such a dump does not
         exist.
         """
-        output = "unknown"
         progress = 0
         done = 0
-        report = self.getDumpJson(wiki, date, "dumpruninfo")["jobs"]
+
+        try:
+            report = self.getDumpJson(wiki, date, "dumpruninfo")["jobs"]
+        except TypeError:
+            # self.getDumpJson returned a boolean, likely due to missing report
+            return "unknown"
+
         for job in report:
             status = report[job]["status"]
             if (status == "failed"):
-                output = "error"
                 # The dump has 1 failed file, forget about archiving this dump
-                return output
+                return "error"
             elif (status == "in-progress" or status == "waiting"):
                 progress += 1
             elif (status == "done" or status == "skipped"):
@@ -228,16 +239,14 @@ class BALMDumps(object):
             else:
                 # Return output in case a new status appears.
                 # We do not want to corrupt our database with false entries.
-                output = "unknown"
-                return output
+                return "unknown"
 
         if (progress > 0):
-            output = "progress"
+            return "progress"
         elif (progress == 0 and done > 0):
-            output = "done"
+            return "done"
         else:
-            output = "unknown"
-        return output
+            return "unknown"
 
     def getDBList(self, dblist):
         """
@@ -286,10 +295,16 @@ class BALMDumps(object):
         - wiki (string): The wiki database to get a list of files for.
         - date (string): The date of the dump in %Y%m%d format.
 
-        Returns: List of files, or False if an error has occurred.
+        Returns: List of files, or an empty list if an error has occurred.
         """
         dumpfiles = []
-        report = self.getDumpJson(wiki, date, report="dumpstatus")["jobs"]
+
+        try:
+            report = self.getDumpJson(wiki, date, report="dumpstatus")["jobs"]
+        except TypeError:
+            # self.getDumpJson returned a boolean, likely due to missing report
+            return []
+
         for job in report:
             try:
                 dumpfiles += report[job]["files"]
@@ -301,7 +316,7 @@ class BALMDumps(object):
                 else:
                     # This happens when the dump that we are working on is
                     # incomplete, which should not be the case
-                    return False
+                    return []
         return sorted(dumpfiles + self.additional)
 
     def checkDumpExists(self, wiki, date):
