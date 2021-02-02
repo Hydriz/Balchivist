@@ -529,33 +529,54 @@ class BALMWikidata(object):
             'x-archive-size-hint': self.sizehint
         }
 
-        if (path is None):
-            dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database,
-                                  dumpdate)
-            baseurl = "%s/%s/%s" % (self.config.get('baseurl'), database,
-                                    dumpdate)
-            self.common.downloadFiles(filelist=items, directory=dumps,
-                                      baseurl=baseurl)
-        else:
-            dumps = path
+        dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database, dumpdate)
+        baseurl = "%s/%s/%s" % (self.config.get('baseurl'), database, dumpdate)
 
-        if (self.common.checkDumpDir(path=dumps, filelist=items)):
-            pass
-        else:
-            # The dump directory is not suitable to be used, exit the function
-            return False
+        for thefile in items:
+            templist = [thefile]
+            os.system("mkdir -p %s && cd %s && rsync -avzP rsync://ftpmirror.your.org/wikimedia-dumps/other/wikibase/%s/%s/%s ." % (dumps, dumps, database, dumpdate, thefile))
+            # self.common.downloadFiles(filelist=templist, directory=dumps, baseurl=baseurl)
 
-        if (items == []):
-            return True
-        else:
+            if (self.common.checkDumpDir(path=dumps, filelist=templist)):
+                pass
+            else:
+                # The dump directory is not suitable to be used, exit the function
+                return False
+
             os.chdir(dumps)
-            upload = iaitem.upload(body=items, metadata=md, headers=headers)
+            upload = iaitem.upload(body=templist, metadata=md, headers=headers)
+            if upload:
+                shutil.rmtree(dumps)
 
-        if (upload and path is None):
-            shutil.rmtree(dumps)
-            return True
-        else:
-            return upload
+        #if (path is None):
+        #    dumps = "%s/%s/%s" % (self.config.get('dumpdir'), database,
+        #                          dumpdate)
+        #    baseurl = "%s/%s/%s" % (self.config.get('baseurl'), database,
+        #                            dumpdate)
+        #    self.common.downloadFiles(filelist=items, directory=dumps,
+        #                              baseurl=baseurl)
+        #else:
+        #    dumps = path
+        #dumps = "/public/dumps/public/other/wikibase/%s/%s" % (database, dumpdate)
+
+        #if (self.common.checkDumpDir(path=dumps, filelist=items)):
+        #    pass
+        #else:
+            # The dump directory is not suitable to be used, exit the function
+       #     return False
+
+        #if (items == []):
+        #    return True
+        #else:
+        #    os.chdir(dumps)
+        #    upload = iaitem.upload(body=items, metadata=md, headers=headers)
+
+        #if (upload and path is None):
+        #    shutil.rmtree(dumps)
+        #    return True
+        #else:
+        #    return upload
+        return True
 
     def check(self, database, dumpdate):
         """

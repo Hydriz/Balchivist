@@ -29,8 +29,7 @@ class BALSqlDb(object):
     """
     hostname = socket.gethostname()
 
-    def __init__(self, database="balchivist", host="localhost",
-                 default='~/.my.cnf'):
+    def __init__(self, database="balchivist", host="localhost", user="root", passwd=""):
         """
         This function is executed when a new instance of BALSqlDb is
         initialized.
@@ -41,7 +40,8 @@ class BALSqlDb(object):
         """
         self.database = database
         self.host = host
-        self.default = default
+        self.user = user
+        self.passwd = passwd
 
     @classmethod
     def getFromConf(cls):
@@ -52,7 +52,8 @@ class BALSqlDb(object):
         config = BALConfig('main')
         return cls(database=config.get('database'),
                    host=config.get('host'),
-                   default=config.get('defaults_file'))
+                   user=config.get('user'),
+                   passwd=config.get('passwd'))
 
     def getConds(self, params):
         """
@@ -102,8 +103,7 @@ class BALSqlDb(object):
         Returns: Tuple with the MySQL query results, else None if empty set.
         """
         result = ()
-        conn = MySQLdb.connect(host=self.host, db=self.database,
-                               read_default_file=self.default)
+        conn = MySQLdb.connect(host=self.host, db=self.database, user=self.user, passwd=self.passwd)
         cursor = conn.cursor()
         cursor.execute(query, params)
         result = cursor.fetchall()

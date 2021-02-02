@@ -122,6 +122,7 @@ class BALCommon(object):
                 # Exit the rest of the function and leave it to another day.
                 self.giveDebugMessage("The dump files in the local directory "
                                       "is incomplete!")
+                self.giveDebugMessage("File missing is: %s" % (dumpfile))
                 return False
         return True
 

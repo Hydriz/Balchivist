@@ -18,6 +18,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import time
 import urllib
 
@@ -307,9 +308,14 @@ class BALMDumps(object):
 
         for job in report:
             try:
-                dumpfiles += report[job]["files"]
-            except KeyError:
-                if (report[job]["status"] == "skipped"):
+                jobstatus = report[job]["status"]
+
+                if jobstatus == "done":
+                    try:
+                        dumpfiles += report[job]["files"]
+                    except KeyError:
+                        return []
+                elif (jobstatus == "skipped"):
                     # Continue since the job is skipped and does not affect
                     # our overall process
                     continue
@@ -317,6 +323,8 @@ class BALMDumps(object):
                     # This happens when the dump that we are working on is
                     # incomplete, which should not be the case
                     return []
+            except KeyError:
+                return []
         return sorted(dumpfiles + self.additional)
 
     def checkDumpExists(self, wiki, date):
@@ -698,10 +706,11 @@ class BALMDumps(object):
         for dump in cannotarc:
             if not self.checkDumpExists(db, dump):
                 continue
-
-            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            allfiles = self.getDumpFiles(db, dump)
-            if (self.common.checkDumpDir(dumpdir, allfiles)):
+            else:
+#
+#            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
+#            allfiles = self.getDumpFiles(db, dump)
+#            if (self.common.checkDumpDir(dumpdir, allfiles)):
                 # The dump is now suitable to be archived
                 self.common.giveMessage("Updating can_archive for %s "
                                         "on %s" % (db, dump))
@@ -711,8 +720,8 @@ class BALMDumps(object):
                                                           archivedate=True)
                 }
                 self.updateCanArchive(params=params, can_archive=1)
-            else:
-                continue
+#            else:
+#                continue
 
     def updateFailedDumps(self, db):
         """
@@ -750,9 +759,10 @@ class BALMDumps(object):
         """
         canarc = self.getStoredDumps(db, can_archive=1)
         for dump in canarc:
-            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
-            allfiles = self.getDumpFiles(db, dump)
-            if (self.common.checkDumpDir(dumpdir, allfiles)):
+#            dumpdir = "%s/%s/%s" % (self.config.get('dumpdir'), db, dump)
+#            allfiles = self.getDumpFiles(db, dump)
+#            if (self.common.checkDumpDir(dumpdir, allfiles)):
+            if (self.checkDumpExists(db, dump)):
                 continue
             else:
                 # The dump is now unable to be archived automatically
@@ -815,32 +825,76 @@ class BALMDumps(object):
 
         Returns: True if process is successful, False if otherwise.
         """
-        metadata = self.getItemMetadata(wiki=wiki, dumpdate=date)
+        largewikis = ['enwiki', 'wikidatawiki', 'dewiki', 'commonswiki']
+        md = self.getItemMetadata(wiki=wiki, dumpdate=date)
         headers = {
             'x-archive-size-hint': self.sizehint
         }
         allfiles = self.getDumpFiles(wiki, date)
-
-        if (path is None):
-            dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
-        else:
-            dumps = path
-
-        if (self.common.checkDumpDir(dumps, allfiles)):
-            pass
-        else:
-            # The dump directory is not suitable to be used, exit the function
-            return False
-
         iaitem = balchivist.BALArchiver('%s-%s' % (wiki, date),
                                         verbose=self.verbose, debug=self.debug)
         items = self.getFilesToUpload(wiki=wiki, dumpdate=date, path=path)
-        if (items == []):
-            return True
+        dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
+
+        # Test availability of rsync first
+        useRsync = True
+        exitcode = os.WEXITSTATUS(os.system("cd /srv/temp && rsync -avzq rsync://ftpmirror.your.org/wikimedia-dumps/404.html ."))
+        if (exitcode != 0):
+            # Rsync not available
+            useRsync = False
+
+        if wiki in largewikis:
+            for thefile in items:
+                templist = [thefile]
+                if useRsync:
+                    os.system("mkdir -p %s && cd %s && rsync -avzP rsync://ftpmirror.your.org/wikimedia-dumps/%s/%s/%s ." % (dumps, dumps, wiki, date, thefile))
+                else:
+                    os.system("mkdir -p %s && cd %s && wget -q --show-progress http://dumps.wikimedia.your.org/%s/%s/%s" % (dumps, dumps, wiki, date, thefile))
+
+                if (self.common.checkDumpDir(path=dumps, filelist=templist)):
+                    pass
+                else:
+                    # The dump directory is not suitable to be used, exit the function
+                    return False
+
+                os.chdir(dumps)
+                upload = iaitem.upload(body=templist, metadata=md, headers=headers)
+                if upload:
+                    shutil.rmtree(dumps)
         else:
+            if useRsync:
+                os.system("mkdir -p %s && cd %s && rsync -avzP rsync://ftpmirror.your.org/wikimedia-dumps/%s/%s/ ." % (dumps, dumps, wiki, date))
+            else:
+                os.system("mkdir -p %s" % (dumps))
+                for thedumpfile in items:
+                    os.system("cd %s && wget -q --show-progress http://dumps.wikimedia.your.org/%s/%s/%s" % (dumps, wiki, date, thedumpfile))
+                    time.sleep(0.1) # For Ctrl+C
+
+            if (self.common.checkDumpDir(path=dumps, filelist=items)):
+                pass
+            else:
+                # The dump directory is not suitable to be used, exit the function
+                return False
+
             os.chdir(dumps)
-            return iaitem.upload(body=items, metadata=metadata,
-                                 headers=headers)
+            upload = iaitem.upload(body=items, metadata=md, headers=headers)
+            if upload:
+                shutil.rmtree(dumps)
+
+        os.chdir(self.config.get('dumpdir'))
+        os.system("rm -rf %s/%s" % (self.config.get('dumpdir'), wiki))
+
+        #if (path is None):
+        #    dumps = "%s/%s/%s" % (self.config.get('dumpdir'), wiki, date)
+        #else:
+        #    dumps = path
+
+        #if (self.common.checkDumpDir(dumps, allfiles)):
+        #    pass
+        #else:
+            # The dump directory is not suitable to be used, exit the function
+        #    return False
+        return True
 
     def check(self, wiki, date):
         """
